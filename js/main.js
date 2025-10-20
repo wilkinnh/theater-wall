@@ -47,7 +47,6 @@ class TheaterWallApp {
             this.isInitialized = true;
             
             console.log(`Theater Wall Display initialized in ${Date.now() - this.startTime}ms`);
-            this.showWelcomeMessage();
             
         } catch (error) {
             console.error('Failed to start application:', error);
@@ -219,52 +218,6 @@ class TheaterWallApp {
         });
     }
 
-    // Show welcome message
-    showWelcomeMessage() {
-        const welcomeMessage = document.createElement('div');
-        welcomeMessage.className = 'welcome-message';
-        welcomeMessage.innerHTML = `
-            <h2>Welcome to Theater Wall</h2>
-            <p>Your Home Assistant display is ready!</p>
-            <p>Press <kbd>Ctrl + ,</kbd> to configure settings</p>
-            <p>Press <kbd>F1</kbd> for help</p>
-            <button class="welcome-dismiss">Get Started</button>
-        `;
-        
-        Object.assign(welcomeMessage.style, {
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.95), rgba(20, 20, 30, 0.95))',
-            border: '2px solid rgba(100, 100, 120, 0.3)',
-            borderRadius: '16px',
-            padding: '40px',
-            zIndex: '5000',
-            textAlign: 'center',
-            color: '#fff',
-            backdropFilter: 'blur(20px)',
-            minWidth: '400px',
-            boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)'
-        });
-        
-        document.body.appendChild(welcomeMessage);
-        
-        // Auto-dismiss after 5 seconds
-        const autoDismiss = setTimeout(() => {
-            if (welcomeMessage.parentNode) {
-                document.body.removeChild(welcomeMessage);
-            }
-        }, 5000);
-        
-        // Manual dismiss
-        welcomeMessage.querySelector('.welcome-dismiss').addEventListener('click', () => {
-            clearTimeout(autoDismiss);
-            if (welcomeMessage.parentNode) {
-                document.body.removeChild(welcomeMessage);
-            }
-        });
-    }
 
     // Reload application
     reloadApplication() {

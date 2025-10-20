@@ -23,7 +23,8 @@
       "media_player.bedroom_speaker",
       "media_player.kitchen_display",
       "media_player.outdoor_speakers"
-    ]
+    ],
+    "game_score": "sensor.atlanta_falcons"
   },
   "video": {
     "autoPlay": false,

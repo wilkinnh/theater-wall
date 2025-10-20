@@ -1,5 +1,11 @@
 // Configuration Management for Theater Wall Display
 
+// Import environment configuration loader
+if (typeof require !== 'undefined') {
+    // Node.js environment - load environment config
+    require('./env-config.js');
+}
+
 class TheaterWallConfig {
     constructor() {
         this.defaultConfig = {
@@ -34,6 +40,7 @@ class TheaterWallConfig {
                     'assets/videos/sample.mp4'
                 ]
             },
+            gameScore: 'sensor.atlanta_falcons',
             display: {
                 brightness: 1.0,
                 contrast: 1.0,
@@ -47,15 +54,26 @@ class TheaterWallConfig {
         this.initEventListeners();
     }
 
-    // Load configuration from localStorage
+    // Load configuration from localStorage and environment variables
     loadConfig() {
         try {
+            // Start with default configuration
+            this.config = { ...this.defaultConfig };
+            
+            // Load from localStorage if available
             const savedConfig = localStorage.getItem('theater-wall-config');
             if (savedConfig) {
-                this.config = { ...this.defaultConfig, ...JSON.parse(savedConfig) };
+                this.config = { ...this.config, ...JSON.parse(savedConfig) };
             }
+            
+            // Apply environment variable overrides
+            if (window.envConfigLoader) {
+                this.config = window.envConfigLoader.applyToConfig(this.config);
+            }
+            
         } catch (error) {
-            console.warn('Failed to load configuration from localStorage:', error);
+            console.warn('Failed to load configuration:', error);
+            this.config = { ...this.defaultConfig };
         }
         this.applyConfig();
     }

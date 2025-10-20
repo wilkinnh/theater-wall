@@ -54,14 +54,219 @@ class PanelManager {
     // Load entities from configuration
     loadEntities() {
         const entitiesConfig = this.config.getEntitiesConfig();
+        const gameScoreEntity = this.config.get('gameScore');
         
         // Clear existing entities
         this.clearAllPanels();
         
-        // Load entities for each panel
-        this.loadPanelEntities('sensors', entitiesConfig.sensors);
-        this.loadPanelEntities('controls', entitiesConfig.controls);
-        this.loadPanelEntities('media', entitiesConfig.media);
+        // Load game score if configured
+        if (gameScoreEntity) {
+            this.loadGameScore(gameScoreEntity);
+        } else {
+            // Load regular entities if no game score configured
+            this.loadPanelEntities('sensors', entitiesConfig.sensors);
+            this.loadPanelEntities('controls', entitiesConfig.controls);
+            this.loadPanelEntities('media', entitiesConfig.media);
+        }
+    }
+
+    // Load game score display
+    loadGameScore(gameScoreEntity) {
+        console.log('Loading game score for entity:', gameScoreEntity);
+        const state = this.homeAssistant.getEntityState(gameScoreEntity);
+        
+        if (state && state.attributes) {
+            console.log('Found real game state, using it');
+            this.displayGameScore(state);
+        } else {
+            // Create sample game data for testing
+            console.log('No game state found, using sample data');
+            const sampleGameData = this.createSampleGameData();
+            this.displayGameScore(sampleGameData);
+        }
+    }
+
+    // Display game score in panels
+    displayGameScore(gameData) {
+        const attrs = gameData.attributes;
+        
+        console.log('Displaying game score:', attrs);
+        console.log('Containers:', {
+            left: this.containers.sensors,
+            center: this.containers.controls,
+            right: this.containers.media
+        });
+        
+        // Left panel - Opponent
+        const leftContainer = this.containers.sensors;
+        if (leftContainer) {
+            console.log('Updating left panel with opponent:', attrs.opponent_abbr);
+            leftContainer.innerHTML = `
+                <div class="game-score-display team-${attrs.opponent_abbr.toLowerCase()}">
+                    <div class="team-abbr">${attrs.opponent_abbr}</div>
+                    <div class="team-score">${attrs.opponent_score}</div>
+                    <div class="team-record">${attrs.opponent_record}</div>
+                </div>
+            `;
+        } else {
+            console.error('Left container not found');
+        }
+        
+        // Center panel - Game stats
+        const centerContainer = this.containers.controls;
+        if (centerContainer) {
+            console.log('Updating center panel with game stats');
+            console.log('Quarter value:', attrs.quarter, 'Type:', typeof attrs.quarter);
+            
+            // Safely handle quarter value
+            let quarterText = 'Game Info';
+            if (attrs.quarter) {
+                const quarterStr = String(attrs.quarter);
+                const quarterNum = quarterStr.replace(/\D/g, '');
+                if (quarterNum) {
+                    quarterText = `${quarterNum}${this.getOrdinalSuffix(parseInt(quarterNum))} Quarter`;
+                }
+            }
+            
+            centerContainer.innerHTML = `
+                <div class="game-stats">
+                    <div class="game-info">
+                        <div class="game-time">${attrs.clock || 'N/A'}</div>
+                        <div class="game-quarter">${quarterText}</div>
+                        <div class="game-venue">${attrs.venue || 'N/A'}</div>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Location</span>
+                        <span class="stat-value">${attrs.location || 'N/A'}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">TV Network</span>
+                        <span class="stat-value">${attrs.tv_network || 'N/A'}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Possession</span>
+                        <span class="stat-value">${attrs.possession === attrs.team_id ? attrs.team_abbr : attrs.opponent_abbr}</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Down & Distance</span>
+                        <span class="stat-value">${attrs.down_distance_text || 'N/A'}</span>
+                    </div>
+                    ${attrs.last_play ? `<div class="last-play">${attrs.last_play}</div>` : ''}
+                </div>
+            `;
+        } else {
+            console.error('Center container not found');
+        }
+        
+        // Right panel - Selected team
+        const rightContainer = this.containers.media;
+        if (rightContainer) {
+            console.log('Updating right panel with team:', attrs.team_abbr);
+            console.log('Team data:', {
+                abbr: attrs.team_abbr,
+                score: attrs.team_score,
+                record: attrs.team_record
+            });
+            rightContainer.innerHTML = `
+                <div class="game-score-display team-${(attrs.team_abbr || '').toLowerCase()}">
+                    <div class="team-abbr">${attrs.team_abbr || 'N/A'}</div>
+                    <div class="team-score">${attrs.team_score || '0'}</div>
+                    <div class="team-record">${attrs.team_record || '0-0'}</div>
+                </div>
+            `;
+        } else {
+            console.error('Right container not found');
+        }
+    }
+
+    // Create sample game data for testing
+    createSampleGameData() {
+        return {
+            entity_id: 'sensor.atlanta_falcons',
+            state: 'active',
+            attributes: {
+                attribution: 'Data provided by ESPN',
+                sport: 'football',
+                sport_path: 'football',
+                league: 'NFL',
+                league_path: 'nfl',
+                league_logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png',
+                season: 'regular-season',
+                team_abbr: 'ATL',
+                opponent_abbr: 'SF',
+                event_name: 'ATL @ SF',
+                event_url: 'https://www.espn.com/nfl/game?gameId=401772924',
+                date: '2025-10-20T00:20Z',
+                kickoff_in: '46 minutes ago',
+                series_summary: null,
+                venue: "Levi's Stadium",
+                location: 'Santa Clara, CA, USA',
+                tv_network: 'NBC',
+                odds: null,
+                overunder: null,
+                team_name: 'Falcons',
+                team_long_name: 'Atlanta Falcons',
+                team_id: '1',
+                team_record: '3-2',
+                team_rank: null,
+                team_conference_id: null,
+                team_homeaway: 'away',
+                team_logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/atl.png',
+                team_url: 'https://www.espn.com/nfl/team/_/name/atl/atlanta-falcons',
+                team_colors: ['#a71930', '#000000'],
+                team_score: '3',
+                team_win_probability: 0.6305000000000001,
+                team_winner: null,
+                team_timeouts: 3,
+                opponent_name: '49ers',
+                opponent_long_name: 'San Francisco 49ers',
+                opponent_id: '25',
+                opponent_record: '4-2',
+                opponent_rank: null,
+                opponent_conference_id: null,
+                opponent_homeaway: 'home',
+                opponent_logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/sf.png',
+                opponent_url: 'https://www.espn.com/nfl/team/_/name/sf/san-francisco-49ers',
+                opponent_colors: ['#aa0000', '#b3995d'],
+                opponent_score: '0',
+                opponent_win_probability: 0.3695,
+                opponent_winner: null,
+                opponent_timeouts: 3,
+                quarter: '2',
+                clock: '8:58 - 2nd',
+                possession: '1',
+                last_play: '(Shotgun) M.Penix pass incomplete short right to B.Robinson.',
+                down_distance_text: '2nd & 10 at ATL 49',
+                outs: null,
+                balls: null,
+                strikes: null,
+                on_first: null,
+                on_second: null,
+                on_third: null,
+                team_shots_on_target: null,
+                team_total_shots: null,
+                opponent_shots_on_target: null,
+                opponent_total_shots: null,
+                team_sets_won: null,
+                opponent_sets_won: null,
+                last_update: '2025-10-19 21:06:38-04:00',
+                api_message: 'Cached data',
+                api_url: 'http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?lang=en&limit=50&dates=20251018-20251024',
+                icon: 'mdi:football',
+                friendly_name: 'atlanta_falcons'
+            },
+            last_updated: new Date().toISOString()
+        };
+    }
+
+    // Helper function to get ordinal suffix
+    getOrdinalSuffix(num) {
+        const j = num % 10;
+        const k = num % 100;
+        if (j == 1 && k != 11) return 'st';
+        if (j == 2 && k != 12) return 'nd';
+        if (j == 3 && k != 13) return 'rd';
+        return 'th';
     }
 
     // Load entities for a specific panel
@@ -534,8 +739,8 @@ class PanelManager {
             }
         };
         
-        // Display sample data if not connected to Home Assistant
-        if (!this.homeAssistant.isConnected) {
+        // Display sample data if not connected to Home Assistant and no game score configured
+        if (!this.homeAssistant.isConnected && !this.config.get('gameScore')) {
             Object.entries(sampleData).forEach(([entityId, state]) => {
                 const panelType = this.getPanelTypeForEntity(entityId);
                 if (panelType) {

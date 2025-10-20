@@ -5,6 +5,7 @@
   "main": "index.html",
   "scripts": {
     "dev": "live-server --port=8080 --host=0.0.0.0 --open=/index.html --watch=css/,js/,config/ --ignore=.git,node_modules",
+    "dev:env": "node scripts/dev-env.js",
     "start": "live-server --port=8080 --host=0.0.0.0 --open=/index.html",
     "build": "echo 'No build step needed for static files'",
     "serve": "python -m http.server 8080 --bind 0.0.0.0",
@@ -21,7 +22,8 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "live-server": "^1.2.2"
+    "live-server": "^1.2.2",
+    "dotenv": "^16.3.1"
   },
   "engines": {
     "node": ">=14.0.0"

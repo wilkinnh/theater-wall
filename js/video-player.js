@@ -124,68 +124,119 @@ class VideoPlayer {
         });
     }
 
-    // Create SVG mask for video panels
+    // Create CSS mask for video panels
     createVideoMask() {
+        // Remove existing mask if any
+        const existingMask = this.overlay?.querySelector('.video-mask');
+        if (existingMask) {
+            existingMask.remove();
+        }
+        
+        // Get actual panel positions from the DOM
+        const leftPanel = document.getElementById('panel-left');
+        const centerPanel = document.getElementById('panel-center');
+        const rightPanel = document.getElementById('panel-right');
+        
+        if (!leftPanel || !centerPanel || !rightPanel) {
+            console.warn('Panels not found, cannot create mask');
+            return;
+        }
+        
+        // Get actual panel positions and dimensions
+        const leftPanelRect = leftPanel.getBoundingClientRect();
+        const centerPanelRect = centerPanel.getBoundingClientRect();
+        const rightPanelRect = rightPanel.getBoundingClientRect();
+        
+        // Convert to viewport percentage
+        const leftPanelStart = (leftPanelRect.left / window.innerWidth) * 100;
+        const leftPanelWidth = (leftPanelRect.width / window.innerWidth) * 100;
+        const centerPanelStart = (centerPanelRect.left / window.innerWidth) * 100;
+        const centerPanelWidth = (centerPanelRect.width / window.innerWidth) * 100;
+        const rightPanelStart = (rightPanelRect.left / window.innerWidth) * 100;
+        const rightPanelWidth = (rightPanelRect.width / window.innerWidth) * 100;
+        
+        console.log('Video mask calculations from DOM:', {
+            leftPanelStart,
+            leftPanelWidth,
+            centerPanelStart,
+            centerPanelWidth,
+            rightPanelStart,
+            rightPanelWidth,
+            windowWidth: window.innerWidth,
+            windowHeight: window.innerHeight
+        });
+        
+        // Ensure main video is visible
+        if (this.player) {
+            this.player.style.display = 'block';
+        }
+        
+        // Create 3 separate clip-paths using CSS mask approach
+        // Since CSS polygon connects all points, we need to use a different strategy
+        
+        // Apply individual clip-path to each panel area using CSS mask
+        if (this.player) {
+            // Use CSS mask with multiple gradients for better control
+            const maskImage = `
+                linear-gradient(to right,
+                    transparent 0%,
+                    transparent ${leftPanelStart}%,
+                    white ${leftPanelStart}%,
+                    white ${leftPanelStart + leftPanelWidth}%,
+                    transparent ${leftPanelStart + leftPanelWidth}%,
+                    transparent ${centerPanelStart}%,
+                    white ${centerPanelStart}%,
+                    white ${centerPanelStart + centerPanelWidth}%,
+                    transparent ${centerPanelStart + centerPanelWidth}%,
+                    transparent ${rightPanelStart}%,
+                    white ${rightPanelStart}%,
+                    white ${rightPanelStart + rightPanelWidth}%,
+                    transparent ${rightPanelStart + rightPanelWidth}%,
+                    transparent 100%
+                )
+            `;
+            
+            this.player.style.mask = maskImage;
+            this.player.style.webkitMask = maskImage;
+            this.player.style.maskMode = 'alpha';
+            console.log('Applied CSS mask to video:', maskImage);
+        }
+        
+        // Create visual indicators
         const maskContainer = document.createElement('div');
         maskContainer.className = 'video-mask';
+        maskContainer.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5;
+            pointer-events: none;
+        `;
         
-        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-        svg.setAttribute('viewBox', '0 0 100 100');
-        svg.setAttribute('preserveAspectRatio', 'xMidYMid slice');
+        // Add visual borders around panel areas
+        const panels = [
+            { start: leftPanelStart, width: leftPanelWidth },
+            { start: centerPanelStart, width: centerPanelWidth },
+            { start: rightPanelStart, width: rightPanelWidth }
+        ];
         
-        const mask = document.createElementNS('http://www.w3.org/2000/svg', 'mask');
-        mask.setAttribute('id', 'panel-mask');
-        
-        // Create mask rectangles for 3 panels
-        const panelWidth = this.config.get('panelWidth');
-        const panelGap = this.config.get('panelGap');
-        const leftPanelStart = 5;
-        const leftPanelEnd = leftPanelStart + panelWidth;
-        const centerPanelStart = leftPanelEnd + panelGap;
-        const centerPanelEnd = centerPanelStart + panelWidth;
-        const rightPanelStart = centerPanelEnd + panelGap;
-        const rightPanelEnd = rightPanelStart + panelWidth;
-        
-        // Left panel
-        const leftRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        leftRect.setAttribute('x', leftPanelStart);
-        leftRect.setAttribute('y', '10');
-        leftRect.setAttribute('width', panelWidth);
-        leftRect.setAttribute('height', '80');
-        leftRect.setAttribute('fill', 'white');
-        
-        // Center panel
-        const centerRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        centerRect.setAttribute('x', centerPanelStart);
-        centerRect.setAttribute('y', '10');
-        centerRect.setAttribute('width', panelWidth);
-        centerRect.setAttribute('height', '80');
-        centerRect.setAttribute('fill', 'white');
-        
-        // Right panel
-        const rightRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rightRect.setAttribute('x', rightPanelStart);
-        rightRect.setAttribute('y', '10');
-        rightRect.setAttribute('width', panelWidth);
-        rightRect.setAttribute('height', '80');
-        rightRect.setAttribute('fill', 'white');
-        
-        mask.appendChild(leftRect);
-        mask.appendChild(centerRect);
-        mask.appendChild(rightRect);
-        
-        // Create masked rectangle
-        const maskedRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        maskedRect.setAttribute('x', '0');
-        maskedRect.setAttribute('y', '0');
-        maskedRect.setAttribute('width', '100');
-        maskedRect.setAttribute('height', '100');
-        maskedRect.setAttribute('fill', 'white');
-        maskedRect.setAttribute('mask', 'url(#panel-mask)');
-        
-        svg.appendChild(mask);
-        svg.appendChild(maskedRect);
-        maskContainer.appendChild(svg);
+        panels.forEach((panel, index) => {
+            const border = document.createElement('div');
+            border.style.cssText = `
+                position: absolute;
+                left: ${panel.start}vw;
+                top: 0;
+                width: ${panel.width}vw;
+                height: 100vh;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                box-sizing: border-box;
+                pointer-events: none;
+                z-index: 6;
+            `;
+            maskContainer.appendChild(border);
+        });
         
         // Insert mask into overlay
         if (this.overlay) {

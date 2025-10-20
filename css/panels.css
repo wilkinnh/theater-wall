@@ -329,7 +329,7 @@
     font-size: 90px;
     font-weight: 900;
     line-height: 1;
-    margin-bottom: 50px;
+    margin-bottom: 10px;
     text-transform: uppercase;
     letter-spacing: -2px;
     font-family: 'Georgia', 'Times New Roman', serif;
@@ -342,6 +342,7 @@
     font-weight: 700;
     line-height: 1;
     margin-bottom: 20px;
+    margin-top: 50px;
 }
 
 .team-record {

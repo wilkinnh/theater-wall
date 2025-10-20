@@ -132,8 +132,8 @@ class PanelManager {
             leftContainer.innerHTML = `
                 <div class="game-score-display team-${attrs.opponent_abbr.toLowerCase()}">
                     <div class="team-abbr">${attrs.opponent_abbr}</div>
-                    <div class="team-score">${attrs.opponent_score}</div>
                     <div class="team-record">${attrs.opponent_record}</div>
+                    <div class="team-score">${attrs.opponent_score}</div>
                 </div>
             `;
         }
@@ -189,8 +189,8 @@ class PanelManager {
             rightContainer.innerHTML = `
                 <div class="game-score-display team-${(attrs.team_abbr || '').toLowerCase()}">
                     <div class="team-abbr">${attrs.team_abbr || 'N/A'}</div>
-                    <div class="team-score">${attrs.team_score || '0'}</div>
                     <div class="team-record">${attrs.team_record || '0-0'}</div>
+                    <div class="team-score">${attrs.team_score || '0'}</div>
                 </div>
             `;
         }

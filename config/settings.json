@@ -31,8 +31,7 @@
     "loop": true,
     "volume": 0.5,
     "defaultSources": [
-      "assets/videos/sample.mp4",
-      "assets/videos/ambient.mp4"
+      "assets/videos/ric-flair.mp4"
     ]
   },
   "display": {

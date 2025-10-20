@@ -110,6 +110,10 @@ class VideoPlayer {
                     case 'f':
                         this.toggleFullscreen();
                         break;
+                    case 'm':
+                        event.preventDefault();
+                        this.toggleVideoMask();
+                        break;
                 }
             }
         });
@@ -289,10 +293,9 @@ class VideoPlayer {
     // Show video overlay
     showVideoOverlay() {
         if (this.overlay) {
+            console.log('Showing video overlay, removing hidden class');
             this.overlay.classList.remove('hidden');
-            setTimeout(() => {
-                this.overlay.classList.add('active');
-            }, 10);
+            this.overlay.classList.add('active');
         }
     }
 
@@ -463,6 +466,58 @@ class VideoPlayer {
             this.videoSources.splice(index, 1);
             this.config.set('video.defaultSources', this.videoSources);
         }
+    }
+
+    // Toggle video mask on/off for testing
+    toggleVideoMask() {
+        const mask = this.overlay?.querySelector('.video-mask');
+        if (mask) {
+            if (mask.style.display === 'none') {
+                mask.style.display = 'block';
+                console.log('Video mask enabled');
+            } else {
+                mask.style.display = 'none';
+                console.log('Video mask disabled - full video visible');
+            }
+        } else {
+            console.log('No video mask found');
+        }
+        
+        // Debug video element state
+        this.debugVideoElement();
+    }
+
+    // Debug video element properties
+    debugVideoElement() {
+        if (!this.player) {
+            console.log('No video player element found');
+            return;
+        }
+        
+        console.log('Video element debug:', {
+            element: this.player,
+            src: this.player.src,
+            currentSrc: this.player.currentSrc,
+            readyState: this.player.readyState,
+            networkState: this.player.networkState,
+            videoWidth: this.player.videoWidth,
+            videoHeight: this.player.videoHeight,
+            paused: this.player.paused,
+            ended: this.player.ended,
+            currentTime: this.player.currentTime,
+            duration: this.player.duration,
+            style: {
+                display: this.player.style.display,
+                visibility: this.player.style.visibility,
+                opacity: this.player.style.opacity,
+                width: this.player.style.width,
+                height: this.player.style.height,
+                zIndex: this.player.style.zIndex
+            },
+            computedStyle: window.getComputedStyle(this.player),
+            parentElement: this.player.parentElement,
+            isVisible: this.player.offsetWidth > 0 && this.player.offsetHeight > 0
+        });
     }
 
     // Get current video state

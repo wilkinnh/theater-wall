@@ -27,58 +27,21 @@
 .video-player {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     position: absolute;
     top: 0;
     left: 0;
-}
-
-/* Panel Masking for Video */
-.video-overlay::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    z-index: 0;
     background: #000;
-    z-index: 1;
-    pointer-events: none;
 }
 
-/* Create 3 transparent panels in the black overlay */
+/* Panel Masking for Video - DISABLED FOR TESTING */
+.video-overlay::before {
+    display: none;
+}
+
 .video-overlay::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 2;
-    pointer-events: none;
-    background: 
-        /* Left panel mask */
-        linear-gradient(to right, 
-            transparent 5vw,
-            transparent calc(5vw + var(--panel-width, 30vw)),
-            #000 calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw))
-        ),
-        /* Center panel mask */
-        linear-gradient(to right,
-            #000 calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw)),
-            transparent calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw),
-            transparent calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw + var(--panel-width, 30vw)),
-            #000 calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw))
-        ),
-        /* Right panel mask */
-        linear-gradient(to right,
-            #000 calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw)),
-            transparent calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw),
-            transparent calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw + var(--panel-width, 30vw)),
-            #000 100%
-        );
-    mask-composite: source-out;
-    -webkit-mask-composite: source-out;
+    display: none;
 }
 
 /* Alternative approach using SVG masks for better browser support */

@@ -27,7 +27,7 @@ class TheaterWallConfig {
                 loop: true,
                 volume: 0.5,
                 defaultSources: [
-                    'assets/videos/sample.mp4'
+                    'assets/videos/ric-flair.mp4'
                 ]
             },
             gameScore: 'sensor.atlanta_falcons',
@@ -168,6 +168,25 @@ class TheaterWallConfig {
     // Import configuration (environment-driven - disabled)
     importConfig(file) {
         console.warn('Configuration is environment-driven - import operations are disabled');
+    }
+
+    // Clear cached configuration and reload
+    clearCacheAndReload() {
+        console.log('Clearing cached configuration...');
+        
+        // Clear all localStorage items
+        localStorage.clear();
+        
+        // Clear sessionStorage as well
+        sessionStorage.clear();
+        
+        this.showNotification('Configuration cache cleared. Reloading...', 'info');
+        
+        // Force hard reload with timestamp to bypass cache
+        const timestamp = Date.now();
+        setTimeout(() => {
+            window.location.href = window.location.href + '?t=' + timestamp;
+        }, 100);
     }
 
     // Show notification

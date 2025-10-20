@@ -16,32 +16,6 @@
             <span id="status-text">Connecting...</span>
         </div>
 
-        <!-- Configuration panel (hidden by default) -->
-        <div id="config-panel" class="config-panel hidden">
-            <h3>Panel Configuration</h3>
-            <div class="config-group">
-                <label for="panel-width">Panel Width (%):</label>
-                <input type="number" id="panel-width" min="10" max="40" value="30">
-            </div>
-            <div class="config-group">
-                <label for="panel-gap">Panel Gap (%):</label>
-                <input type="number" id="panel-gap" min="1" max="10" value="2">
-            </div>
-            <div class="config-group">
-                <label for="ha-url">Home Assistant URL:</label>
-                <input type="text" id="ha-url" placeholder="ws://homeassistant.local:8123/api/websocket">
-            </div>
-            <div class="config-group">
-                <label for="ha-token">Access Token:</label>
-                <input type="password" id="ha-token" placeholder="Long-lived access token">
-            </div>
-            <button id="save-config">Save Configuration</button>
-            <button id="close-config">Close</button>
-        </div>
-
-        <!-- Config button -->
-        <button id="config-toggle" class="config-toggle">⚙️</button>
-
         <!-- Main panel container -->
         <div id="panels-container">
             <!-- Left Panel - Sensors -->

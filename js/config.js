@@ -68,7 +68,16 @@ class TheaterWallConfig {
             
             // Apply environment variable overrides
             if (window.envConfigLoader) {
+                const envStatus = window.envConfigLoader.getConfigStatus();
+                console.log('Environment config status:', envStatus);
                 this.config = window.envConfigLoader.applyToConfig(this.config);
+                console.log('Config after env override:', {
+                    haUrl: this.config.homeAssistantUrl ? 'SET' : 'MISSING',
+                    haToken: this.config.homeAssistantToken ? 'SET' : 'MISSING',
+                    gameScore: this.config.gameScore || 'MISSING'
+                });
+            } else {
+                console.warn('Environment config loader not found');
             }
             
         } catch (error) {
@@ -95,9 +104,6 @@ class TheaterWallConfig {
         
         // Apply display settings
         this.applyDisplaySettings();
-        
-        // Update form values
-        this.updateFormValues();
     }
 
     // Apply panel dimensions to CSS variables
@@ -126,121 +132,9 @@ class TheaterWallConfig {
         }
     }
 
-    // Update form values with current configuration
-    updateFormValues() {
-        const panelWidthInput = document.getElementById('panel-width');
-        const panelGapInput = document.getElementById('panel-gap');
-        const haUrlInput = document.getElementById('ha-url');
-        const haTokenInput = document.getElementById('ha-token');
-
-        if (panelWidthInput) panelWidthInput.value = this.config.panelWidth;
-        if (panelGapInput) panelGapInput.value = this.config.panelGap;
-        if (haUrlInput) haUrlInput.value = this.config.homeAssistantUrl;
-        if (haTokenInput) haTokenInput.value = this.config.homeAssistantToken;
-    }
-
-    // Initialize event listeners
+    // Initialize event listeners (environment-driven - no UI config)
     initEventListeners() {
-        // Configuration panel toggle
-        const configToggle = document.getElementById('config-toggle');
-        const configPanel = document.getElementById('config-panel');
-        const closeConfigBtn = document.getElementById('close-config');
-        const saveConfigBtn = document.getElementById('save-config');
-
-        if (configToggle) {
-            configToggle.addEventListener('click', () => {
-                this.showConfigPanel();
-            });
-        }
-
-        if (closeConfigBtn) {
-            closeConfigBtn.addEventListener('click', () => {
-                this.hideConfigPanel();
-            });
-        }
-
-        if (saveConfigBtn) {
-            saveConfigBtn.addEventListener('click', () => {
-                this.saveFromForm();
-            });
-        }
-
-        // Close config panel when clicking outside
-        document.addEventListener('click', (event) => {
-            if (configPanel && !configPanel.classList.contains('hidden')) {
-                if (!configPanel.contains(event.target) && event.target !== configToggle) {
-                    this.hideConfigPanel();
-                }
-            }
-        });
-
-        // Keyboard shortcuts
-        document.addEventListener('keydown', (event) => {
-            // Ctrl/Cmd + , to open config
-            if ((event.ctrlKey || event.metaKey) && event.key === ',') {
-                event.preventDefault();
-                this.showConfigPanel();
-            }
-            // Escape to close config
-            if (event.key === 'Escape' && !configPanel.classList.contains('hidden')) {
-                this.hideConfigPanel();
-            }
-        });
-    }
-
-    // Show configuration panel
-    showConfigPanel() {
-        const configPanel = document.getElementById('config-panel');
-        if (configPanel) {
-            configPanel.classList.remove('hidden');
-            configPanel.classList.add('fade-in');
-            this.updateFormValues();
-        }
-    }
-
-    // Hide configuration panel
-    hideConfigPanel() {
-        const configPanel = document.getElementById('config-panel');
-        if (configPanel) {
-            configPanel.classList.add('hidden');
-        }
-    }
-
-    // Save configuration from form inputs
-    saveFromForm() {
-        const panelWidthInput = document.getElementById('panel-width');
-        const panelGapInput = document.getElementById('panel-gap');
-        const haUrlInput = document.getElementById('ha-url');
-        const haTokenInput = document.getElementById('ha-token');
-
-        if (panelWidthInput) {
-            const value = parseInt(panelWidthInput.value);
-            if (value >= 10 && value <= 40) {
-                this.config.panelWidth = value;
-            }
-        }
-
-        if (panelGapInput) {
-            const value = parseInt(panelGapInput.value);
-            if (value >= 1 && value <= 10) {
-                this.config.panelGap = value;
-            }
-        }
-
-        if (haUrlInput) {
-            this.config.homeAssistantUrl = haUrlInput.value.trim();
-        }
-
-        if (haTokenInput) {
-            this.config.homeAssistantToken = haTokenInput.value.trim();
-        }
-
-        this.saveConfig();
-        this.applyConfig();
-        this.hideConfigPanel();
-
-        // Show success message
-        this.showNotification('Configuration saved successfully!', 'success');
+        // No configuration UI listeners needed - environment-driven only
     }
 
     // Get configuration value
@@ -248,14 +142,9 @@ class TheaterWallConfig {
         return key.split('.').reduce((obj, k) => obj && obj[k], this.config);
     }
 
-    // Set configuration value
+    // Set configuration value (environment-driven - read-only)
     set(key, value) {
-        const keys = key.split('.');
-        const lastKey = keys.pop();
-        const target = keys.reduce((obj, k) => obj[k] = obj[k] || {}, this.config);
-        target[lastKey] = value;
-        this.saveConfig();
-        this.applyConfig();
+        console.warn('Configuration is environment-driven - set operations are disabled');
     }
 
     // Get Home Assistant configuration
@@ -276,43 +165,19 @@ class TheaterWallConfig {
         return this.config.video;
     }
 
-    // Reset configuration to defaults
+    // Reset configuration to defaults (environment-driven - disabled)
     resetToDefaults() {
-        if (confirm('Are you sure you want to reset all settings to defaults?')) {
-            this.config = { ...this.defaultConfig };
-            this.saveConfig();
-            this.applyConfig();
-            this.showNotification('Configuration reset to defaults', 'info');
-        }
+        console.warn('Configuration is environment-driven - reset operations are disabled');
     }
 
-    // Export configuration
+    // Export configuration (environment-driven - disabled)
     exportConfig() {
-        const dataStr = JSON.stringify(this.config, null, 2);
-        const dataBlob = new Blob([dataStr], { type: 'application/json' });
-        const url = URL.createObjectURL(dataBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = 'theater-wall-config.json';
-        link.click();
-        URL.revokeObjectURL(url);
+        console.warn('Configuration is environment-driven - export operations are disabled');
     }
 
-    // Import configuration
+    // Import configuration (environment-driven - disabled)
     importConfig(file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            try {
-                const importedConfig = JSON.parse(event.target.result);
-                this.config = { ...this.defaultConfig, ...importedConfig };
-                this.saveConfig();
-                this.applyConfig();
-                this.showNotification('Configuration imported successfully!', 'success');
-            } catch (error) {
-                this.showNotification('Failed to import configuration: Invalid JSON', 'error');
-            }
-        };
-        reader.readAsText(file);
+        console.warn('Configuration is environment-driven - import operations are disabled');
     }
 
     // Show notification

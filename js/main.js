@@ -68,11 +68,10 @@ class TheaterWallApp {
         // Video player is already initialized in video-player.js
         this.videoPlayer = window.videoPlayer;
         
-        // Validate configuration
+        // Validate configuration (environment-driven - no notifications)
         const errors = this.config.validateConfig();
         if (errors.length > 0) {
             console.warn('Configuration issues:', errors);
-            this.config.showNotification('Configuration issues detected. Please check your settings.', 'warning');
         }
     }
 
@@ -124,7 +123,6 @@ class TheaterWallApp {
             }
         } else {
             console.log('Home Assistant not configured, using sample data');
-            this.config.showNotification('Configure Home Assistant in settings to enable live data.', 'info');
         }
     }
 
@@ -186,13 +184,9 @@ class TheaterWallApp {
     // Setup keyboard shortcuts
     setupKeyboardShortcuts() {
         document.addEventListener('keydown', (event) => {
-            // Global shortcuts
+            // Global shortcuts (environment-driven - no config shortcuts)
             if (event.ctrlKey || event.metaKey) {
                 switch (event.key) {
-                    case ',':
-                        event.preventDefault();
-                        this.config.showConfigPanel();
-                        break;
                     case 'r':
                         event.preventDefault();
                         this.reloadApplication();
@@ -266,7 +260,6 @@ class TheaterWallApp {
             <div class="help-content">
                 <h3>Keyboard Shortcuts</h3>
                 <ul>
-                    <li><kbd>Ctrl + ,</kbd> - Open configuration</li>
                     <li><kbd>F1</kbd> - Show this help</li>
                     <li><kbd>F5</kbd> - Reload application</li>
                     <li><kbd>Ctrl + R</kbd> - Reload application</li>
@@ -284,8 +277,8 @@ class TheaterWallApp {
                 </ul>
                 
                 <h3>Configuration</h3>
-                <p>Configure your Home Assistant connection and panel settings using the configuration panel.</p>
-                <p>You'll need a long-lived access token from Home Assistant.</p>
+                <p>This display is configured through environment variables.</p>
+                <p>Set your Home Assistant URL, access token, and game score entity in your .env file or deployment environment.</p>
             </div>
             <button class="help-close">Close</button>
         `;

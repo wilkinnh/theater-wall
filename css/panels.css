@@ -347,6 +347,59 @@
     font-weight: 400;
 }
 
+/* New Game Score Entity Styles */
+.game-score {
+    text-align: center;
+}
+
+.score-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    gap: 20px;
+}
+
+.team-score, .opponent-score {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.team-score.possession, .opponent-score.possession {
+    background: rgba(76, 175, 80, 0.2);
+    border: 1px solid rgba(76, 175, 80, 0.4);
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+}
+
+.team-name, .opponent-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.score {
+    font-size: 36px;
+    font-weight: 700;
+    color: #4CAF50;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.vs-divider {
+    font-size: 20px;
+    font-weight: 500;
+    color: #666;
+    padding: 0 10px;
+}
+
 .game-stats {
     display: flex;
     flex-direction: column;

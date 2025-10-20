@@ -77,6 +77,14 @@ class TheaterWallApp {
 
     // Setup global event handlers
     setupGlobalHandlers() {
+        // Setup debug refresh button
+        const debugRefresh = document.getElementById('debug-refresh');
+        if (debugRefresh) {
+            debugRefresh.addEventListener('click', () => {
+                this.debugRefreshGameScore();
+            });
+        }
+
         // Handle visibility change (tab switching)
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
@@ -313,6 +321,45 @@ class TheaterWallApp {
                 document.body.removeChild(helpDialog);
             }
         });
+    }
+
+    // Debug refresh game score
+    debugRefreshGameScore() {
+        console.log('🔄 Manual game score refresh triggered');
+        
+        const gameScoreEntity = this.config.get('gameScore');
+        console.log('Refreshing entity:', gameScoreEntity);
+        
+        if (this.homeAssistant && this.homeAssistant.isConnected) {
+            // Get fresh states from Home Assistant
+            this.homeAssistant.getStates().then(states => {
+                console.log('States refreshed:', states.length, 'entities');
+                
+                const gameScoreState = states.find(s => s.entity_id === gameScoreEntity);
+                if (gameScoreState) {
+                    console.log('Game score state after refresh:', {
+                        teamScore: gameScoreState.attributes?.team_score,
+                        opponentScore: gameScoreState.attributes?.opponent_score,
+                        quarter: gameScoreState.attributes?.quarter,
+                        clock: gameScoreState.attributes?.clock,
+                        lastUpdate: gameScoreState.attributes?.last_update,
+                        lastChanged: gameScoreState.last_changed
+                    });
+                    
+                    // Update the 3-panel display directly
+                    this.panels.displayGameScore(gameScoreState);
+                    
+                    // Also update the hidden entity element for real-time updates
+                    this.panels.updateEntity(gameScoreEntity, gameScoreState);
+                } else {
+                    console.log('Game score entity not found after refresh');
+                }
+            }).catch(error => {
+                console.error('Failed to refresh states:', error);
+            });
+        } else {
+            console.log('Home Assistant not connected');
+        }
     }
 
     // Show fatal error

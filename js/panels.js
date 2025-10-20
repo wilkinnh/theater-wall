@@ -34,14 +34,41 @@ class PanelManager {
     setupEventListeners() {
         // Listen for Home Assistant events
         this.homeAssistant.on('connected', () => {
+            console.log('PanelManager: HA connected, loading entities');
             this.loadEntities();
         });
         
         this.homeAssistant.on('states-loaded', (states) => {
+            console.log('PanelManager: States loaded:', states.length, 'entities');
+            
+            // Check if our game score entity exists
+            const gameScoreEntity = this.config.get('gameScore');
+            const gameScoreState = states.find(s => s.entity_id === gameScoreEntity);
+            console.log('Game score entity check:', {
+                entityId: gameScoreEntity,
+                found: !!gameScoreState,
+                state: gameScoreState
+            });
+            
+            // Log the current game data
+            if (gameScoreState) {
+                console.log('Current game data:', {
+                    teamScore: gameScoreState.attributes?.team_score,
+                    opponentScore: gameScoreState.attributes?.opponent_score,
+                    quarter: gameScoreState.attributes?.quarter,
+                    clock: gameScoreState.attributes?.clock,
+                    lastUpdate: gameScoreState.attributes?.last_update
+                });
+            }
+            
             this.displayEntities(states);
         });
         
         this.homeAssistant.on('state-changed', (data) => {
+            // Only log game score state changes
+            if (data.entity_id === this.config.get('gameScore')) {
+                console.log('PanelManager: Game score update received:', data);
+            }
             this.updateEntity(data.entity_id, data.state);
         });
         
@@ -61,6 +88,7 @@ class PanelManager {
         
         // Load game score if configured
         if (gameScoreEntity) {
+            console.log('Loading game score entity:', gameScoreEntity);
             this.loadGameScore(gameScoreEntity);
         } else {
             // Load regular entities if no game score configured
@@ -76,20 +104,31 @@ class PanelManager {
         
         if (state && state.attributes) {
             this.displayGameScore(state);
+            // Create a hidden entity element for real-time updates (don't add to panel)
+            this.createHiddenEntityElement(gameScoreEntity, state);
         } else {
             // Create sample game data for testing
             const sampleGameData = this.createSampleGameData();
             this.displayGameScore(sampleGameData);
+            // Create a hidden entity element for real-time updates (don't add to panel)
+            this.createHiddenEntityElement(gameScoreEntity, sampleGameData);
         }
     }
 
     // Display game score in panels
     displayGameScore(gameData) {
+        console.log('🎮 displayGameScore called with:', gameData);
         const attrs = gameData.attributes;
         
+        console.log('🎮 Game data attributes:', attrs);
+        console.log('🎮 ALWAYS updating 3-panel display');
+        
+        // ALWAYS update the 3-panel display (this is what users see)
         // Left panel - Opponent
         const leftContainer = this.containers.sensors;
+        console.log('🎮 Left container:', leftContainer);
         if (leftContainer) {
+            console.log('🎮 Updating left panel with opponent data');
             leftContainer.innerHTML = `
                 <div class="game-score-display team-${attrs.opponent_abbr.toLowerCase()}">
                     <div class="team-abbr">${attrs.opponent_abbr}</div>
@@ -101,7 +140,9 @@ class PanelManager {
         
         // Center panel - Game stats
         const centerContainer = this.containers.controls;
+        console.log('🎮 Center container:', centerContainer);
         if (centerContainer) {
+            console.log('🎮 Updating center panel with game stats');
             // Safely handle quarter value
             let quarterText = 'Game Info';
             if (attrs.quarter) {
@@ -142,7 +183,9 @@ class PanelManager {
         
         // Right panel - Selected team
         const rightContainer = this.containers.media;
+        console.log('🎮 Right container:', rightContainer);
         if (rightContainer) {
+            console.log('🎮 Updating right panel with team data');
             rightContainer.innerHTML = `
                 <div class="game-score-display team-${(attrs.team_abbr || '').toLowerCase()}">
                     <div class="team-abbr">${attrs.team_abbr || 'N/A'}</div>
@@ -151,6 +194,8 @@ class PanelManager {
                 </div>
             `;
         }
+        
+        console.log('🎮 displayGameScore completed - 3-panel display updated');
     }
 
     // Create sample game data for testing
@@ -233,6 +278,69 @@ class PanelManager {
         };
     }
 
+    // Create game score content
+    createGameScoreContent(entityId, state) {
+        if (!state) {
+            return `
+                <div class="entity-header">
+                    <span class="entity-name">Game Score</span>
+                    <span class="entity-icon">🏈</span>
+                </div>
+                <div class="entity-content">
+                    <span class="entity-state">No Data</span>
+                </div>
+            `;
+        }
+
+        const attrs = state.attributes || {};
+        
+        // Extract team information
+        const teamName = attrs.team_name || 'Home Team';
+        const opponentName = attrs.opponent_name || 'Away Team';
+        const teamScore = attrs.team_score || 0;
+        const opponentScore = attrs.opponent_score || 0;
+        const quarter = attrs.quarter || '';
+        const clock = attrs.clock || '';
+        const possession = attrs.possession;
+        const lastPlay = attrs.last_play || '';
+        const downDistance = attrs.down_distance_text || '';
+
+        // Determine possession indicator
+        let possessionIndicator = '';
+        if (possession === '1') {
+            possessionIndicator = '⚡';
+        }
+
+        return `
+            <div class="entity-header">
+                <span class="entity-name">${teamName} vs ${opponentName}</span>
+                <span class="entity-icon">🏈</span>
+            </div>
+            <div class="entity-content game-score">
+                <div class="score-display">
+                    <div class="team-score ${possession === '1' ? 'possession' : ''}">
+                        <span class="team-name">${teamName}</span>
+                        <span class="score">${teamScore}</span>
+                    </div>
+                    <div class="vs-divider">VS</div>
+                    <div class="opponent-score ${possession === '0' ? 'possession' : ''}">
+                        <span class="opponent-name">${opponentName}</span>
+                        <span class="score">${opponentScore}</span>
+                    </div>
+                </div>
+                ${quarter && clock ? `
+                    <div class="game-info">
+                        <span class="quarter">${quarter}</span>
+                        <span class="clock">${clock}</span>
+                        ${possessionIndicator ? `<span class="possession-indicator">${possessionIndicator}</span>` : ''}
+                    </div>
+                ` : ''}
+                ${lastPlay ? `<div class="last-play">${lastPlay}</div>` : ''}
+                ${downDistance ? `<div class="down-distance">${downDistance}</div>` : ''}
+            </div>
+        `;
+    }
+
     // Helper function to get ordinal suffix
     getOrdinalSuffix(num) {
         const j = num % 10;
@@ -305,10 +413,42 @@ class PanelManager {
         this.entityElements.set(entityId, element);
     }
 
+    // Create hidden entity element for real-time updates (doesn't add to panel)
+    createHiddenEntityElement(entityId, state) {
+        console.log('Creating hidden entity element for:', entityId);
+        
+        const element = document.createElement('div');
+        element.className = 'entity-card';
+        element.id = `entity-${entityId.replace(/\./g, '-')}`;
+        element.style.display = 'none'; // Hide it
+        
+        if (state) {
+            element.classList.add(state.state === 'on' ? 'on' : 'off');
+            if (state.state === 'unavailable') {
+                element.classList.add('unavailable');
+            }
+        } else {
+            element.classList.add('unavailable');
+        }
+        
+        // Create entity content based on type
+        const content = this.createEntityContent(entityId, state);
+        element.innerHTML = content;
+        
+        // Add to entity elements map but don't append to container
+        this.entityElements.set(entityId, element);
+        console.log('Hidden entity element created and stored');
+    }
+
     // Create entity content based on entity type
     createEntityContent(entityId, state) {
         const domain = entityId.split('.')[0];
         const friendlyName = state?.attributes?.friendly_name || this.formatEntityName(entityId);
+        
+        // Special handling for game score entity
+        if (entityId === this.config.get('gameScore')) {
+            return this.createGameScoreContent(entityId, state);
+        }
         
         switch (domain) {
             case 'sensor':
@@ -555,8 +695,21 @@ class PanelManager {
 
     // Update entity display
     updateEntity(entityId, state) {
+        // Only process updates for entities we care about
+        const gameScoreEntity = this.config.get('gameScore');
+        if (entityId !== gameScoreEntity) {
+            return;
+        }
+        
+        console.log('updateEntity called:', entityId, state);
+        
         const element = this.entityElements.get(entityId);
-        if (!element) return;
+        if (!element) {
+            console.log('No element found for entity:', entityId);
+            return;
+        }
+        
+        console.log('Updating element for:', entityId);
         
         // Update classes
         element.classList.remove('on', 'off', 'unavailable');

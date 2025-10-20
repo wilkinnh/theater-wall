@@ -15,21 +15,11 @@ class TheaterWallConfig {
             homeAssistantToken: '',
             entities: {
                 sensors: [
-                    'sensor.temperature_living_room',
-                    'sensor.humidity_living_room',
-                    'binary_sensor.motion_front_door',
-                    'sensor.outside_temperature'
+                    'sensor.atlanta_falcons',
                 ],
                 controls: [
-                    'light.living_room',
-                    'light.kitchen',
-                    'switch.fan',
-                    'media_player.living_room_tv'
                 ],
                 media: [
-                    'media_player.living_room_speaker',
-                    'media_player.bedroom_speaker',
-                    'media_player.kitchen_display'
                 ]
             },
             video: {

@@ -204,6 +204,11 @@ class HomeAssistantClient {
     handleStateChanged(data) {
         const { entity_id, new_state } = data;
         
+        // Only log state changes for entities we care about (game score)
+        if (entity_id === 'sensor.atlanta_falcons') {
+            console.log('Game score state changed:', { entity_id, new_state });
+        }
+        
         if (new_state) {
             this.entities.set(entity_id, new_state);
             this.emit('state-changed', { entity_id, state: new_state });

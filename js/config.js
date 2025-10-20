@@ -3,7 +3,7 @@
 class TheaterWallConfig {
     constructor() {
         this.defaultConfig = {
-            panelWidth: 30,
+            panelWidth: 27,
             panelGap: 2,
             homeAssistantUrl: 'ws://homeassistant.local:8123/api/websocket',
             homeAssistantToken: '',

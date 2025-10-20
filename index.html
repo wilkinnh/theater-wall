@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Theater Wall - Home Assistant Display</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/panels.css">
+    <link rel="stylesheet" href="css/video-overlay.css">
+</head>
+<body>
+    <!-- Main container with black background -->
+    <div id="app-container">
+        <!-- Connection status indicator -->
+        <div id="connection-status" class="status-indicator">
+            <span id="status-text">Connecting...</span>
+        </div>
+
+        <!-- Configuration panel (hidden by default) -->
+        <div id="config-panel" class="config-panel hidden">
+            <h3>Panel Configuration</h3>
+            <div class="config-group">
+                <label for="panel-width">Panel Width (%):</label>
+                <input type="number" id="panel-width" min="10" max="40" value="30">
+            </div>
+            <div class="config-group">
+                <label for="panel-gap">Panel Gap (%):</label>
+                <input type="number" id="panel-gap" min="1" max="10" value="2">
+            </div>
+            <div class="config-group">
+                <label for="ha-url">Home Assistant URL:</label>
+                <input type="text" id="ha-url" placeholder="ws://homeassistant.local:8123/api/websocket">
+            </div>
+            <div class="config-group">
+                <label for="ha-token">Access Token:</label>
+                <input type="password" id="ha-token" placeholder="Long-lived access token">
+            </div>
+            <button id="save-config">Save Configuration</button>
+            <button id="close-config">Close</button>
+        </div>
+
+        <!-- Config button -->
+        <button id="config-toggle" class="config-toggle">⚙️</button>
+
+        <!-- Main panel container -->
+        <div id="panels-container">
+            <!-- Left Panel - Sensors -->
+            <div id="panel-left" class="panel panel-sensors">
+                <div class="panel-header">
+                    <h2>Sensors</h2>
+                </div>
+                <div class="panel-content">
+                    <div id="sensors-container" class="entities-container">
+                        <!-- Sensor entities will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center Panel - Switches/Controls -->
+            <div id="panel-center" class="panel panel-controls">
+                <div class="panel-header">
+                    <h2>Controls</h2>
+                </div>
+                <div class="panel-content">
+                    <div id="controls-container" class="entities-container">
+                        <!-- Control entities will be populated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Media Players -->
+            <div id="panel-right" class="panel panel-media">
+                <div class="panel-header">
+                    <h2>Media</h2>
+                </div>
+                <div class="panel-content">
+                    <div id="media-container" class="entities-container">
+                        <!-- Media player entities will be populated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video overlay system -->
+        <div id="video-overlay" class="video-overlay hidden">
+            <video id="video-player" class="video-player" loop>
+                Your browser does not support the video tag.
+            </video>
+            <div id="video-controls" class="video-controls">
+                <button id="video-close">✕</button>
+                <button id="video-play-pause">⏸️</button>
+            </div>
+        </div>
+
+        <!-- Video trigger button -->
+        <button id="video-trigger" class="video-trigger">🎬</button>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/home-assistant.js"></script>
+    <script src="js/panels.js"></script>
+    <script src="js/video-player.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>

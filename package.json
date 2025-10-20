@@ -1,0 +1,29 @@
+{
+  "name": "theater-wall",
+  "version": "1.0.0",
+  "description": "Home Assistant theater wall display with 3-panel projection",
+  "main": "index.html",
+  "scripts": {
+    "dev": "live-server --port=8080 --host=0.0.0.0 --open=/index.html --watch=css/,js/,config/ --ignore=.git,node_modules",
+    "start": "live-server --port=8080 --host=0.0.0.0 --open=/index.html",
+    "build": "echo 'No build step needed for static files'",
+    "serve": "python -m http.server 8080 --bind 0.0.0.0",
+    "docker:build": "docker build -t theater-wall .",
+    "docker:run": "docker run -p 8080:80 theater-wall"
+  },
+  "keywords": [
+    "home-assistant",
+    "projection",
+    "theater",
+    "dashboard",
+    "websocket"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "live-server": "^1.2.2"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

@@ -1,0 +1,339 @@
+/* Video Overlay System with Panel Masking */
+
+.video-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    z-index: 3000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+.video-overlay.active {
+    opacity: 1;
+}
+
+.video-overlay.hidden {
+    display: none;
+}
+
+/* Video Player */
+.video-player {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+/* Panel Masking for Video */
+.video-overlay::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: #000;
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* Create 3 transparent panels in the black overlay */
+.video-overlay::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+    background: 
+        /* Left panel mask */
+        linear-gradient(to right, 
+            transparent 5vw,
+            transparent calc(5vw + var(--panel-width, 30vw)),
+            #000 calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw))
+        ),
+        /* Center panel mask */
+        linear-gradient(to right,
+            #000 calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw)),
+            transparent calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw),
+            transparent calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw + var(--panel-width, 30vw)),
+            #000 calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw))
+        ),
+        /* Right panel mask */
+        linear-gradient(to right,
+            #000 calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw)),
+            transparent calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw),
+            transparent calc(5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw + var(--panel-width, 30vw) + var(--panel-gap, 2vw) + 5vw + var(--panel-width, 30vw)),
+            #000 100%
+        );
+    mask-composite: source-out;
+    -webkit-mask-composite: source-out;
+}
+
+/* Alternative approach using SVG masks for better browser support */
+.video-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.video-mask svg {
+    width: 100%;
+    height: 100%;
+}
+
+/* Video Controls */
+.video-controls {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px 25px;
+    border-radius: 50px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.video-controls button {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    color: #fff;
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-controls button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.video-controls button#video-close {
+    background: rgba(244, 67, 54, 0.3);
+    border-color: rgba(244, 67, 54, 0.5);
+}
+
+.video-controls button#video-close:hover {
+    background: rgba(244, 67, 54, 0.5);
+}
+
+/* Video Progress Bar */
+.video-progress-container {
+    position: absolute;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80%;
+    max-width: 800px;
+    z-index: 10;
+}
+
+.video-progress-bar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.video-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #2196F3);
+    border-radius: 3px;
+    transition: width 0.1s ease;
+    width: 0%;
+}
+
+.video-time {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 300;
+}
+
+/* Video Information Overlay */
+.video-info {
+    position: absolute;
+    top: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+    z-index: 10;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 15px 30px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    max-width: 600px;
+}
+
+.video-title {
+    font-size: 24px;
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+
+.video-description {
+    font-size: 16px;
+    color: #ccc;
+    font-weight: 300;
+}
+
+/* Loading State */
+.video-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    text-align: center;
+    color: #fff;
+}
+
+.video-loading-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-top: 4px solid #4CAF50;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error State */
+.video-error {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    text-align: center;
+    color: #fff;
+    background: rgba(244, 67, 54, 0.2);
+    padding: 30px;
+    border-radius: 10px;
+    border: 1px solid rgba(244, 67, 54, 0.5);
+    max-width: 400px;
+}
+
+.video-error h3 {
+    font-size: 20px;
+    margin-bottom: 10px;
+}
+
+.video-error p {
+    font-size: 16px;
+    color: #ccc;
+}
+
+/* Responsive Video Controls */
+@media (max-width: 768px) {
+    .video-controls {
+        bottom: 20px;
+        padding: 10px 15px;
+        gap: 10px;
+    }
+    
+    .video-controls button {
+        width: 40px;
+        height: 40px;
+        font-size: 16px;
+    }
+    
+    .video-progress-container {
+        bottom: 80px;
+        width: 90%;
+    }
+    
+    .video-info {
+        top: 20px;
+        padding: 10px 20px;
+        max-width: 90%;
+    }
+    
+    .video-title {
+        font-size: 18px;
+    }
+    
+    .video-description {
+        font-size: 14px;
+    }
+}
+
+/* Accessibility */
+.video-overlay:focus-within {
+    outline: 2px solid #4CAF50;
+    outline-offset: 2px;
+}
+
+.video-controls button:focus {
+    outline: 2px solid #4CAF50;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .video-controls {
+        background: #000;
+        border: 2px solid #fff;
+    }
+    
+    .video-controls button {
+        background: #000;
+        border: 2px solid #fff;
+    }
+    
+    .video-info {
+        background: #000;
+        border: 2px solid #fff;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .video-overlay {
+        transition: none;
+    }
+    
+    .video-controls button {
+        transition: none;
+    }
+    
+    .video-loading-spinner {
+        animation: none;
+    }
+}

@@ -1,0 +1,399 @@
+/* Panel Layout and Masking System */
+
+#panels-container {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90vw;
+    height: 80vh;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--panel-gap, 2%);
+}
+
+/* Base Panel Styles */
+.panel {
+    background: linear-gradient(135deg, rgba(30, 30, 40, 0.9), rgba(20, 20, 30, 0.9));
+    border: 2px solid rgba(100, 100, 120, 0.3);
+    border-radius: 16px;
+    width: var(--panel-width, 30%);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    backdrop-filter: blur(20px);
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(circle at 20% 20%, rgba(100, 100, 150, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(100, 100, 150, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.panel:hover {
+    border-color: rgba(100, 100, 150, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 
+        0 25px 70px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+/* Panel Headers */
+.panel-header {
+    background: linear-gradient(135deg, rgba(40, 40, 50, 0.8), rgba(30, 30, 40, 0.8));
+    padding: 20px;
+    border-bottom: 1px solid rgba(100, 100, 120, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.panel-header h2 {
+    font-size: 28px;
+    font-weight: 300;
+    text-align: center;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    letter-spacing: 1px;
+}
+
+/* Panel Content */
+.panel-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Custom scrollbar for panels */
+.panel-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.panel-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+}
+
+.panel-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+}
+
+.panel-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Panel-specific styling */
+.panel-sensors {
+    border-left: 4px solid #4CAF50;
+}
+
+.panel-sensors .panel-header {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(40, 40, 50, 0.8));
+}
+
+.panel-controls {
+    border-left: 4px solid #2196F3;
+}
+
+.panel-controls .panel-header {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.2), rgba(40, 40, 50, 0.8));
+}
+
+.panel-media {
+    border-left: 4px solid #FF9800;
+}
+
+.panel-media .panel-header {
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.2), rgba(40, 40, 50, 0.8));
+}
+
+/* Entity Containers */
+.entities-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Base Entity Card */
+.entity-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 15px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+.entity-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.entity-card:hover::before {
+    left: 100%;
+}
+
+.entity-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateX(4px);
+}
+
+.entity-card.on {
+    background: rgba(76, 175, 80, 0.1);
+    border-color: rgba(76, 175, 80, 0.3);
+}
+
+.entity-card.unavailable {
+    opacity: 0.5;
+    background: rgba(244, 67, 54, 0.1);
+    border-color: rgba(244, 67, 54, 0.2);
+}
+
+/* Entity Header */
+.entity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.entity-name {
+    font-size: 18px;
+    font-weight: 500;
+    color: #fff;
+}
+
+.entity-icon {
+    font-size: 24px;
+    margin-right: 10px;
+}
+
+.entity-state {
+    font-size: 16px;
+    color: #ccc;
+    font-weight: 300;
+}
+
+/* Entity Content */
+.entity-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.entity-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: #4CAF50;
+}
+
+.entity-unit {
+    font-size: 14px;
+    color: #999;
+    margin-left: 5px;
+}
+
+.entity-attributes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.entity-attribute {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #aaa;
+}
+
+/* Sensor-specific styles */
+.sensor-value {
+    color: #4CAF50;
+}
+
+.temperature-sensor .entity-value {
+    color: #FF9800;
+}
+
+.humidity-sensor .entity-value {
+    color: #2196F3;
+}
+
+.motion-sensor.on {
+    background: rgba(255, 152, 0, 0.2);
+    border-color: rgba(255, 152, 0, 0.4);
+}
+
+/* Switch/Control specific styles */
+.switch-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.switch-toggle {
+    width: 60px;
+    height: 30px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    position: relative;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.switch-toggle.on {
+    background: rgba(76, 175, 80, 0.3);
+    border-color: #4CAF50;
+}
+
+.switch-toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 22px;
+    height: 22px;
+    background: #fff;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.switch-toggle.on::after {
+    left: 33px;
+}
+
+/* Media Player specific styles */
+.media-player {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.media-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.media-title {
+    font-size: 16px;
+    color: #fff;
+    font-weight: 500;
+}
+
+.media-artist {
+    font-size: 14px;
+    color: #ccc;
+}
+
+.media-controls {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.media-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #fff;
+    font-size: 16px;
+}
+
+.media-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.media-progress {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    margin-top: 10px;
+    overflow: hidden;
+}
+
+.media-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4CAF50, #2196F3);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* Responsive Panel Layout */
+@media (max-width: 1200px) {
+    #panels-container {
+        width: 95vw;
+        height: 85vh;
+    }
+    
+    .panel-header h2 {
+        font-size: 24px;
+    }
+    
+    .entity-name {
+        font-size: 16px;
+    }
+    
+    .entity-value {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 768px) {
+    #panels-container {
+        flex-direction: column;
+        width: 95vw;
+        height: 95vh;
+        gap: 10px;
+    }
+    
+    .panel {
+        width: 100%;
+        height: 30%;
+    }
+    
+    .panel-header h2 {
+        font-size: 20px;
+    }
+    
+    .entity-value {
+        font-size: 18px;
+    }
+}

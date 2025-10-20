@@ -72,15 +72,12 @@ class PanelManager {
 
     // Load game score display
     loadGameScore(gameScoreEntity) {
-        console.log('Loading game score for entity:', gameScoreEntity);
         const state = this.homeAssistant.getEntityState(gameScoreEntity);
         
         if (state && state.attributes) {
-            console.log('Found real game state, using it');
             this.displayGameScore(state);
         } else {
             // Create sample game data for testing
-            console.log('No game state found, using sample data');
             const sampleGameData = this.createSampleGameData();
             this.displayGameScore(sampleGameData);
         }
@@ -90,17 +87,9 @@ class PanelManager {
     displayGameScore(gameData) {
         const attrs = gameData.attributes;
         
-        console.log('Displaying game score:', attrs);
-        console.log('Containers:', {
-            left: this.containers.sensors,
-            center: this.containers.controls,
-            right: this.containers.media
-        });
-        
         // Left panel - Opponent
         const leftContainer = this.containers.sensors;
         if (leftContainer) {
-            console.log('Updating left panel with opponent:', attrs.opponent_abbr);
             leftContainer.innerHTML = `
                 <div class="game-score-display team-${attrs.opponent_abbr.toLowerCase()}">
                     <div class="team-abbr">${attrs.opponent_abbr}</div>
@@ -108,16 +97,11 @@ class PanelManager {
                     <div class="team-record">${attrs.opponent_record}</div>
                 </div>
             `;
-        } else {
-            console.error('Left container not found');
         }
         
         // Center panel - Game stats
         const centerContainer = this.containers.controls;
         if (centerContainer) {
-            console.log('Updating center panel with game stats');
-            console.log('Quarter value:', attrs.quarter, 'Type:', typeof attrs.quarter);
-            
             // Safely handle quarter value
             let quarterText = 'Game Info';
             if (attrs.quarter) {
@@ -154,19 +138,11 @@ class PanelManager {
                     ${attrs.last_play ? `<div class="last-play">${attrs.last_play}</div>` : ''}
                 </div>
             `;
-        } else {
-            console.error('Center container not found');
         }
         
         // Right panel - Selected team
         const rightContainer = this.containers.media;
         if (rightContainer) {
-            console.log('Updating right panel with team:', attrs.team_abbr);
-            console.log('Team data:', {
-                abbr: attrs.team_abbr,
-                score: attrs.team_score,
-                record: attrs.team_record
-            });
             rightContainer.innerHTML = `
                 <div class="game-score-display team-${(attrs.team_abbr || '').toLowerCase()}">
                     <div class="team-abbr">${attrs.team_abbr || 'N/A'}</div>
@@ -174,8 +150,6 @@ class PanelManager {
                     <div class="team-record">${attrs.team_record || '0-0'}</div>
                 </div>
             `;
-        } else {
-            console.error('Right container not found');
         }
     }
 

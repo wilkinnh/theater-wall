@@ -52,23 +52,6 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
-/* Panel Headers */
-.panel-header {
-    background: linear-gradient(135deg, rgba(40, 40, 50, 0.8), rgba(30, 30, 40, 0.8));
-    padding: 20px;
-    border-bottom: 1px solid rgba(100, 100, 120, 0.2);
-    backdrop-filter: blur(10px);
-}
-
-.panel-header h2 {
-    font-size: 28px;
-    font-weight: 300;
-    text-align: center;
-    color: #fff;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    letter-spacing: 1px;
-}
-
 /* Panel Content */
 .panel-content {
     flex: 1;
@@ -96,36 +79,13 @@
     background: rgba(255, 255, 255, 0.3);
 }
 
-/* Panel-specific styling */
-.panel-sensors {
-    border-left: 4px solid #4CAF50;
-}
-
-.panel-sensors .panel-header {
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(40, 40, 50, 0.8));
-}
-
-.panel-controls {
-    border-left: 4px solid #2196F3;
-}
-
-.panel-controls .panel-header {
-    background: linear-gradient(135deg, rgba(33, 150, 243, 0.2), rgba(40, 40, 50, 0.8));
-}
-
-.panel-media {
-    border-left: 4px solid #FF9800;
-}
-
-.panel-media .panel-header {
-    background: linear-gradient(135deg, rgba(255, 152, 0, 0.2), rgba(40, 40, 50, 0.8));
-}
-
 /* Entity Containers */
 .entities-container {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    height: 100%;
+    padding: 20px;
 }
 
 /* Base Entity Card */

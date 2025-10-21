@@ -229,47 +229,12 @@ class PanelManager {
             `;
         }
         
-        // Center panel - Game stats
+        // Center panel - Sport-specific game stats
         const centerContainer = this.containers.controls;
         console.log('🎮 Center container:', centerContainer);
         if (centerContainer) {
-            console.log('🎮 Updating center panel with game stats');
-            // Safely handle quarter value
-            let quarterText = 'Game Info';
-            if (attrs.quarter) {
-                const quarterStr = String(attrs.quarter);
-                const quarterNum = quarterStr.replace(/\D/g, '');
-                if (quarterNum) {
-                    quarterText = `${quarterNum}${this.getOrdinalSuffix(parseInt(quarterNum))} Quarter`;
-                }
-            }
-            
-            centerContainer.innerHTML = `
-                <div class="game-stats">
-                    <div class="game-info">
-                        <div class="game-time">${attrs.clock || 'N/A'}</div>
-                        <div class="game-quarter">${quarterText}</div>
-                        <div class="game-venue">${attrs.venue || 'N/A'}</div>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Location</span>
-                        <span class="stat-value">${attrs.location || 'N/A'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">TV Network</span>
-                        <span class="stat-value">${attrs.tv_network || 'N/A'}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Possession</span>
-                        <span class="stat-value">${attrs.possession === attrs.team_id ? attrs.team_abbr : attrs.opponent_abbr}</span>
-                    </div>
-                    <div class="stat-row">
-                        <span class="stat-label">Down & Distance</span>
-                        <span class="stat-value">${attrs.down_distance_text || 'N/A'}</span>
-                    </div>
-                    ${attrs.last_play ? `<div class="last-play">${attrs.last_play}</div>` : ''}
-                </div>
-            `;
+            console.log('🎮 Updating center panel with', attrs.sport, 'game stats');
+            centerContainer.innerHTML = this.createSportSpecificStats(gameData);
         }
         
         // Right panel - Selected team
@@ -1058,6 +1023,243 @@ class PanelManager {
             case 'off': return 'Off';
             default: return state || 'Unknown';
         }
+    }
+    // Create sport-specific game statistics
+    createSportSpecificStats(gameData) {
+        const attrs = gameData.attributes;
+        const sport = attrs.sport;
+        
+        console.log('🎮 Creating sport-specific stats for:', sport);
+        
+        switch (sport) {
+            case 'hockey':
+                return this.createHockeyStats(gameData);
+            case 'football':
+            case 'nfl':
+                return this.createFootballStats(gameData);
+            case 'basketball':
+            case 'nba':
+                return this.createBasketballStats(gameData);
+            case 'baseball':
+            case 'mlb':
+                return this.createBaseballStats(gameData);
+            case 'soccer':
+                return this.createSoccerStats(gameData);
+            default:
+                return this.createGenericStats(gameData);
+        }
+    }
+
+    // Create hockey-specific stats
+    createHockeyStats(gameData) {
+        const attrs = gameData.attributes;
+        return `
+            <div class="game-stats sport-hockey">
+                <div class="sport-header hockey-header">
+                    <div class="period-info">
+                        <div class="period">${attrs.quarter ? `${attrs.quarter}${this.getOrdinalSuffix(parseInt(attrs.quarter))} Period` : 'N/A'}</div>
+                        <div class="clock">${attrs.clock || 'N/A'}</div>
+                    </div>
+                    <div class="last-play">${attrs.last_play || 'N/A'}</div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-row shots">
+                        <div class="stat-label">Shots on Goal</div>
+                        <div class="stat-value">${attrs.team_shots_on_target || '0'} - ${attrs.opponent_shots_on_target || '0'}</div>
+                    </div>
+                    <div class="stat-row venue">
+                        <div class="stat-label">Venue</div>
+                        <div class="stat-value">${attrs.venue || 'N/A'}</div>
+                    </div>
+                    <div class="stat-row location">
+                        <div class="stat-label">Location</div>
+                        <div class="stat-value">${attrs.location || 'N/A'}</div>
+                    </div>
+                    <div class="stat-row tv">
+                        <div class="stat-label">TV Network</div>
+                        <div class="stat-value">${attrs.tv_network || 'N/A'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Create football-specific stats
+    createFootballStats(gameData) {
+        const attrs = gameData.attributes;
+        return `
+            <div class="game-stats sport-football">
+                <div class="sport-header football-header">
+                    <div class="period-info">
+                        <div class="period">${attrs.quarter ? `Q${attrs.quarter}` : 'N/A'}</div>
+                        <div class="clock">${attrs.clock || 'N/A'}</div>
+                    </div>
+                    <div class="possession">${attrs.possession === attrs.team_id ? attrs.team_abbr : attrs.opponent_abbr}</div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-row down-distance">
+                        <div class="stat-label">Down & Distance</div>
+                        <div class="stat-value">${attrs.down_distance_text || 'N/A'}</div>
+                    </div>
+                    <div class="stat-row last-play">
+                        <div class="stat-label">Last Play</div>
+                        <div class="stat-value">${attrs.last_play || 'N/A'}</div>
+                    </div>
+                    <div class="stat-row venue">
+                        <div class="stat-label">Venue</div>
+                        <div class="stat-value">${attrs.venue || 'N/A'}</div>
+                    </div>
+                    <div class="stat-row tv">
+                        <div class="stat-label">TV Network</div>
+                        <div class="stat-value">${attrs.tv_network || 'N/A'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Create basketball-specific stats
+    createBasketballStats(gameData) {
+        const attrs = gameData.attributes;
+        return `
+            <div class="game-stats sport-basketball">
+                <div class="sport-header basketball-header">
+                    <div class="period-info">
+                        <div class="period">${attrs.quarter ? `Q${attrs.quarter}` : 'N/A'}</div>
+                        <div class="clock">${attrs.clock || 'N/A'}</div>
+                    </div>
+                    <div class="possession">${attrs.possession === attrs.team_id ? attrs.team_abbr : attrs.opponent_abbr}</div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-row timeout">
+                        <div class="stat-label">Timeouts</div>
+                        <div class="stat-value">${attrs.team_timeouts || 'N/A'} - ${attrs.opponent_timeouts || 'N/A'}</div>
+                    </div>
+                    <div class="stat-row last-play">
+                        <div class="stat-label">Last Play</div>
+                        <div class="stat-value">${attrs.last_play || 'N/A'}</div>
+                    </div>
+                    <div class="stat-row venue">
+                        <div class="stat-label">Venue</div>
+                        <div class="stat-value">${attrs.venue || 'N/A'}</div>
+                    </div>
+                    <div class="stat-row tv">
+                        <div class="stat-label">TV Network</div>
+                        <div class="stat-value">${attrs.tv_network || 'N/A'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Create baseball-specific stats
+    createBaseballStats(gameData) {
+        const attrs = gameData.attributes;
+        return `
+            <div class="game-stats sport-baseball">
+                <div class="sport-header baseball-header">
+                    <div class="period-info">
+                        <div class="period">${attrs.quarter || 'N/A'}</div>
+                        <div class="clock">${attrs.clock || 'N/A'}</div>
+                    </div>
+                    <div class="inning-info">${attrs.last_play || 'N/A'}</div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-row balls-strikes">
+                        <div class="stat-label">Balls - Strikes</div>
+                        <div class="stat-value">${attrs.balls || '0'} - ${attrs.strikes || '0'}</div>
+                    </div>
+                    <div class="stat-row outs">
+                        <div class="stat-label">Outs</div>
+                        <div class="stat-value">${attrs.outs || '0'}</div>
+                    </div>
+                    <div class="stat-row runners">
+                        <div class="stat-label">On Base</div>
+                        <div class="stat-value">${this.getRunnersOnBase(attrs)}</div>
+                    </div>
+                    <div class="stat-row venue">
+                        <div class="stat-label">Venue</div>
+                        <div class="stat-value">${attrs.venue || 'N/A'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Create soccer-specific stats
+    createSoccerStats(gameData) {
+        const attrs = gameData.attributes;
+        return `
+            <div class="game-stats sport-soccer">
+                <div class="sport-header soccer-header">
+                    <div class="period-info">
+                        <div class="period">${attrs.quarter || 'N/A'}</div>
+                        <div class="clock">${attrs.clock || 'N/A'}</div>
+                    </div>
+                    <div class="possession">${attrs.possession || 'N/A'}</div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-row shots">
+                        <div class="stat-label">Shots on Target</div>
+                        <div class="stat-value">${attrs.team_shots_on_target || '0'} - ${attrs.opponent_shots_on_target || '0'}</div>
+                    </div>
+                    <div class="stat-row last-play">
+                        <div class="stat-label">Last Play</div>
+                        <div class="stat-value">${attrs.last_play || 'N/A'}</div>
+                    </div>
+                    <div class="stat-row venue">
+                        <div class="stat-label">Venue</div>
+                        <div class="stat-value">${attrs.venue || 'N/A'}</div>
+                    </div>
+                    <div class="stat-row tv">
+                        <div class="stat-label">TV Network</div>
+                        <div class="stat-value">${attrs.tv_network || 'N/A'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Create generic stats for unknown sports
+    createGenericStats(gameData) {
+        const attrs = gameData.attributes;
+        return `
+            <div class="game-stats sport-generic">
+                <div class="sport-header generic-header">
+                    <div class="period-info">
+                        <div class="period">${attrs.quarter || 'N/A'}</div>
+                        <div class="clock">${attrs.clock || 'N/A'}</div>
+                    </div>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-row venue">
+                        <div class="stat-label">Venue</div>
+                        <div class="stat-value">${attrs.venue || 'N/A'}</div>
+                    </div>
+                    <div class="stat-row location">
+                        <div class="stat-label">Location</div>
+                        <div class="stat-value">${attrs.location || 'N/A'}</div>
+                    </div>
+                    <div class="stat-row tv">
+                        <div class="stat-label">TV Network</div>
+                        <div class="stat-value">${attrs.tv_network || 'N/A'}</div>
+                    </div>
+                    <div class="stat-row last-play">
+                        <div class="stat-label">Last Play</div>
+                        <div class="stat-value">${attrs.last_play || 'N/A'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Helper to get runners on base for baseball
+    getRunnersOnBase(attrs) {
+        const runners = [];
+        if (attrs.on_first) runners.push('1B');
+        if (attrs.on_second) runners.push('2B');
+        if (attrs.on_third) runners.push('3B');
+        return runners.length > 0 ? runners.join(', ') : 'None';
     }
 }
 

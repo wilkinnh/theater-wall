@@ -9,8 +9,16 @@ class TheaterWallApp {
         
         this.isInitialized = false;
         this.startTime = Date.now();
+        this.showHUD = this.getHUDParameter();
         
         this.init();
+    }
+
+    // Get HUD parameter from URL query string
+    getHUDParameter() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const showHUD = urlParams.get('showHUD');
+        return showHUD === 'true';
     }
 
     // Initialize the application
@@ -40,6 +48,9 @@ class TheaterWallApp {
             // Setup global event handlers
             this.setupGlobalHandlers();
             
+            // Control HUD visibility
+            this.toggleHUDVisibility();
+            
             // Connect to Home Assistant if configured
             await this.connectToHomeAssistant();
             
@@ -47,6 +58,7 @@ class TheaterWallApp {
             this.isInitialized = true;
             
             console.log(`Theater Wall Display initialized in ${Date.now() - this.startTime}ms`);
+            console.log(`HUD Mode: ${this.showHUD ? 'ENABLED' : 'HIDDEN (add ?showHUD=true to URL)'}`);
             
         } catch (error) {
             console.error('Failed to start application:', error);
@@ -274,6 +286,13 @@ class TheaterWallApp {
                     <li><kbd>Ctrl + S</kbd> - Save current state</li>
                 </ul>
                 
+                <h3>HUD Control</h3>
+                <ul>
+                    <li><code>?showHUD=true</code> - Show overlay buttons</li>
+                    <li><code>?showHUD=false</code> - Hide overlay buttons (default)</li>
+                    <li>HUD controls: Config, Video, Connection Status</li>
+                </ul>
+                
                 <h3>Video Controls</h3>
                 <ul>
                     <li><kbd>Space</kbd> - Play/Pause</li>
@@ -321,6 +340,7 @@ class TheaterWallApp {
                 document.body.removeChild(helpDialog);
             }
         });
+
     }
 
     // Debug refresh game score
@@ -394,6 +414,109 @@ class TheaterWallApp {
         document.body.appendChild(errorDiv);
     }
 
+    // Toggle HUD visibility based on query parameter
+    toggleHUDVisibility() {
+        const hudElements = [
+            'config-toggle',           // Configuration button
+            'video-trigger',           // Video button
+            'connection-status',       // Connection status
+            'debug-refresh'           // Debug refresh button
+        ];
+        
+        hudElements.forEach(elementId => {
+            const element = document.getElementById(elementId);
+            if (element) {
+                if (this.showHUD) {
+                    element.classList.remove('hud-hidden');
+                    element.classList.add('hud-visible');
+                } else {
+                    element.classList.remove('hud-visible');
+                    element.classList.add('hud-hidden');
+                }
+            }
+        });
+        
+        // Add HUD styles to document if not already present
+        this.addHUDStyles();
+        
+        console.log(`HUD elements ${this.showHUD ? 'shown' : 'hidden'}`);
+    }
+
+    // Add HUD styles to document
+    addHUDStyles() {
+        if (document.getElementById('hud-styles')) return;
+        
+        const hudStyles = document.createElement('style');
+        hudStyles.id = 'hud-styles';
+        hudStyles.textContent = `
+            .hud-hidden {
+                opacity: 0 !important;
+                pointer-events: none !important;
+                transform: scale(0.8) !important;
+                transition: all 0.3s ease !important;
+            }
+            
+            .hud-visible {
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                transform: scale(1) !important;
+                transition: all 0.3s ease !important;
+            }
+            
+            /* Add subtle glow effect when HUD is visible */
+            .hud-visible {
+                box-shadow: 0 0 20px rgba(255, 255, 255, 0.1) !important;
+            }
+            
+            /* HUD indicator in console */
+            .hud-indicator {
+                position: fixed;
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(76, 175, 80, 0.9);
+                color: white;
+                padding: 5px 10px;
+                border-radius: 4px;
+                font-size: 12px;
+                z-index: 10000;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+                pointer-events: none;
+            }
+            
+            .hud-indicator.show {
+                opacity: 1;
+            }
+        `;
+        
+        document.head.appendChild(hudStyles);
+        
+        // Show HUD indicator briefly
+        this.showHUDIndicator();
+    }
+
+    // Show HUD indicator briefly
+    showHUDIndicator() {
+        const indicator = document.createElement('div');
+        indicator.className = 'hud-indicator';
+        indicator.textContent = this.showHUD ? 'HUD Enabled' : 'HUD Hidden';
+        document.body.appendChild(indicator);
+        
+        setTimeout(() => {
+            indicator.classList.add('show');
+        }, 100);
+        
+        setTimeout(() => {
+            indicator.classList.remove('show');
+            setTimeout(() => {
+                if (indicator.parentNode) {
+                    document.body.removeChild(indicator);
+                }
+            }, 300);
+        }, 2000);
+    }
+
     // Get application status
     getStatus() {
         return {
@@ -401,7 +524,11 @@ class TheaterWallApp {
             uptime: Date.now() - this.startTime,
             homeAssistant: this.homeAssistant ? this.homeAssistant.getStatus() : null,
             config: this.config ? this.config.config : null,
-            video: this.videoPlayer ? this.videoPlayer.getState() : null
+            video: this.videoPlayer ? this.videoPlayer.getState() : null,
+            hud: {
+                enabled: this.showHUD,
+                url: window.location.search
+            }
         };
     }
 }

@@ -15,7 +15,7 @@ class TheaterWallConfig {
             homeAssistantToken: '',
             entities: {
                 sensors: [
-                    'sensor.atlanta_falcons',
+                    'sensor.carolina_hurricanes',
                 ],
                 controls: [
                 ],
@@ -30,7 +30,7 @@ class TheaterWallConfig {
                     'assets/videos/ric-flair.mp4'
                 ]
             },
-            gameScore: 'sensor.atlanta_falcons',
+            gameScore: 'sensor.carolina_hurricanes',
             display: {
                 brightness: 1.0,
                 contrast: 1.0,

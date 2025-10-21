@@ -36,6 +36,8 @@ class PanelManager {
         this.homeAssistant.on('connected', () => {
             console.log('PanelManager: HA connected, loading entities');
             this.loadEntities();
+            // Start periodic refresh for attribute-based updates
+            this.startPeriodicRefresh();
         });
         
         this.homeAssistant.on('states-loaded', (states) => {
@@ -85,6 +87,76 @@ class PanelManager {
         });
     }
 
+    // Start periodic refresh for entities that update via attributes
+    startPeriodicRefresh() {
+        const gameScoreEntity = this.config.get('gameScore');
+        if (!gameScoreEntity) return;
+
+        console.log('🔄 Starting periodic refresh for attribute-based updates');
+        
+        // Refresh every 30 seconds
+        this.refreshInterval = setInterval(() => {
+            this.refreshGameScoreEntity(gameScoreEntity);
+        }, 30000);
+    }
+
+    // Refresh the game score entity manually
+    async refreshGameScoreEntity(entityId) {
+        if (!this.homeAssistant.isConnected) return;
+
+        try {
+            console.log('🔄 Refreshing game score entity:', entityId);
+            
+            // Get fresh state from Home Assistant API (not cache)
+            const freshStates = await this.homeAssistant.sendWithId({
+                type: 'get_states'
+            });
+            
+            // Find our entity in the fresh data
+            const freshState = freshStates.find(state => state.entity_id === entityId);
+            
+            if (freshState) {
+                console.log('🔄 ✅ Fresh data received:', {
+                    teamScore: freshState.attributes?.team_score,
+                    opponentScore: freshState.attributes?.opponent_score,
+                    quarter: freshState.attributes?.quarter,
+                    clock: freshState.attributes?.clock,
+                    lastUpdate: freshState.attributes?.last_update,
+                    lastChanged: freshState.last_changed
+                });
+                
+                // Update the local cache
+                this.homeAssistant.entities.set(entityId, freshState);
+                
+                // Update the display
+                this.displayGameScore(freshState);
+                
+                // Also update the hidden entity element
+                this.updateHiddenEntityElement(entityId, freshState);
+                
+                console.log('🔄 ✅ Display updated with fresh data');
+            } else {
+                console.log('🔄 ❌ Entity not found in fresh data:', entityId);
+            }
+        } catch (error) {
+            console.error('❌ Failed to refresh entity:', entityId, error);
+        }
+    }
+
+    // Update hidden entity element
+    updateHiddenEntityElement(entityId, state) {
+        const elementId = `entity-${entityId.replace(/\./g, '-')}`;
+        const element = this.entityElements.get(entityId);
+        
+        if (element) {
+            // Update the stored state
+            this.homeAssistant.entities.set(entityId, state);
+            
+            // Trigger the update logic
+            this.updateEntity(entityId, state);
+        }
+    }
+
     // Load entities from configuration
     loadEntities() {
         const entitiesConfig = this.config.getEntitiesConfig();
@@ -114,8 +186,7 @@ class PanelManager {
         console.log('🎮 Home Assistant connected:', this.homeAssistant.isConnected);
         console.log('🎮 Available entities count:', this.homeAssistant.entities.size);
         
-        // Subscribe to the new entity for real-time updates
-        this.subscribeToGameScoreEntity(gameScoreEntity);
+        // HA client already subscribes to all state_changed events and filters client-side
         
         const state = this.homeAssistant.getEntityState(gameScoreEntity);
         console.log('🎮 Home Assistant state for', gameScoreEntity, ':', state);
@@ -132,30 +203,6 @@ class PanelManager {
             this.displayGameScore(sampleGameData);
             // Create a hidden entity element for real-time updates (don't add to panel)
             this.createHiddenEntityElement(gameScoreEntity, sampleGameData);
-        }
-    }
-
-    // Subscribe to game score entity for real-time updates
-    subscribeToGameScoreEntity(entityId) {
-        if (!this.homeAssistant.isConnected) {
-            console.log('🎮 Home Assistant not connected, skipping subscription');
-            return;
-        }
-
-        console.log('🎮 Subscribing to entity updates for:', entityId);
-        
-        // Subscribe to state changes for this entity
-        try {
-            this.homeAssistant.send({
-                type: 'subscribe_events',
-                event_type: 'state_changed',
-                event_data: {
-                    entity_id: entityId
-                }
-            });
-            console.log('🎮 Successfully subscribed to:', entityId);
-        } catch (error) {
-            console.error('🎮 Failed to subscribe to', entityId, ':', error);
         }
     }
 

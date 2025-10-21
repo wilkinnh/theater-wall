@@ -175,14 +175,19 @@ class HomeAssistantClient {
     handleResult(message) {
         const { id, success, result, error } = message;
         
+        console.log('🔄 HA Result message:', { id, success, result, error });
+        
         if (this.subscriptions.has(id)) {
             const { resolve, reject } = this.subscriptions.get(id);
             this.subscriptions.delete(id);
             
             if (success) {
+                console.log('✅ HA Request successful for ID:', id);
                 resolve(result);
             } else {
-                reject(new Error(error || 'Request failed'));
+                console.error('❌ HA Request failed for ID:', id, 'Error:', error);
+                const errorMessage = typeof error === 'object' ? JSON.stringify(error) : error;
+                reject(new Error(errorMessage || 'Request failed'));
             }
         }
     }
@@ -191,8 +196,21 @@ class HomeAssistantClient {
     handleEvent(message) {
         const { event } = message;
         
-        // Handle state changed events
+        // Debug: Log ALL state_changed events temporarily to see what's happening
         if (event.type === 'state_changed') {
+            const gameScoreEntity = window.theaterWallConfig?.get('gameScore');
+            const entityId = event.data?.entity_id;
+            
+            if (entityId === gameScoreEntity) {
+                console.log('🎯 TARGET ENTITY WebSocket event received:', event.type, entityId);
+                console.log('🎯 Full event data:', event.data);
+            } else {
+                // Log a few sample events to confirm WebSocket is working
+                if (Math.random() < 0.01) { // Only log 1% of other events to reduce noise
+                    console.log('🔄 Sample WebSocket event (not target):', event.type, entityId);
+                }
+            }
+            
             this.handleStateChanged(event.data);
         }
         
@@ -257,18 +275,22 @@ class HomeAssistantClient {
     // Subscribe to state change events
     async subscribeToEvents() {
         try {
-            await this.sendWithId({
+            console.log('🔄 Subscribing to ALL state change events (will filter client-side)...');
+            const result = await this.sendWithId({
                 type: 'subscribe_events',
                 event_type: 'state_changed'
             });
             
-            console.log('Subscribed to state change events');
+            console.log('✅ Subscribed to state change events, result:', result);
             
         } catch (error) {
-            console.error('Failed to subscribe to events:', error);
+            console.error('❌ Failed to subscribe to events:', error);
             throw error;
         }
     }
+
+    // Note: Home Assistant WebSocket API doesn't support subscribing to specific entities
+    // We subscribe to all state_changed events and filter client-side for better performance
 
     // Call Home Assistant service
     async callService(domain, service, data = {}) {

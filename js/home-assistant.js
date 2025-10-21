@@ -205,8 +205,9 @@ class HomeAssistantClient {
         const { entity_id, new_state } = data;
         
         // Only log state changes for entities we care about (game score)
-        if (entity_id === 'sensor.carolina_hurricanes') {
-            console.log('Game score state changed:', { entity_id, new_state });
+        const gameScoreEntity = window.theaterWallConfig?.get('gameScore');
+        if (entity_id === gameScoreEntity) {
+            console.log('🔄 Game score state changed:', { entity_id, new_state });
         }
         
         if (new_state) {

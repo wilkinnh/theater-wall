@@ -144,10 +144,33 @@ class TeamSelector {
             // Update display
             this.updateTeamDisplay();
             
-            // Reload all entities to show the new team data
+            // Force refresh Home Assistant data and reload entities
             if (this.panels) {
-                console.log('Team selector: Reloading entities for new team');
-                this.panels.loadEntities();
+                console.log('Team selector: Force refreshing Home Assistant data and reloading entities');
+                
+                // Clear all panels first
+                this.panels.clearAllPanels();
+                
+                // If connected to Home Assistant, refresh states
+                if (this.panels.homeAssistant && this.panels.homeAssistant.isConnected) {
+                    console.log('Team selector: Refreshing Home Assistant states');
+                    this.panels.homeAssistant.getStates().then(states => {
+                        console.log('Team selector: States refreshed, reloading entities');
+                        this.panels.loadEntities();
+                        
+                        // Set up a retry mechanism to ensure the team data loads
+                        this.scheduleTeamDataRetry();
+                    }).catch(error => {
+                        console.error('Team selector: Failed to refresh states:', error);
+                        // Fallback to loading entities anyway
+                        this.panels.loadEntities();
+                        this.scheduleTeamDataRetry();
+                    });
+                } else {
+                    console.log('Team selector: Home Assistant not connected, loading entities directly');
+                    this.panels.loadEntities();
+                    this.scheduleTeamDataRetry();
+                }
             }
         }
         
@@ -157,20 +180,54 @@ class TeamSelector {
         console.log('Team selector: Team set to', team, '(force:', forceUpdate, ')');
     }
 
+    // Schedule a retry to ensure team data loads properly
+    scheduleTeamDataRetry() {
+        // Clear any existing retry timer
+        if (this.retryTimer) {
+            clearTimeout(this.retryTimer);
+        }
+        
+        // Schedule retry in 2 seconds
+        this.retryTimer = setTimeout(() => {
+            console.log('Team selector: Checking if team data loaded properly...');
+            
+            // Check if the team entity is displayed
+            const teamElement = document.querySelector(`[id*="${this.currentTeam.entity_id.replace(/\./g, '-')}"]`);
+            if (!teamElement) {
+                console.log('Team selector: Team element not found, retrying entity load...');
+                if (this.panels) {
+                    this.panels.loadEntities();
+                }
+            } else {
+                console.log('Team selector: Team element found, data loaded successfully');
+            }
+        }, 2000);
+    }
+
     // Update the display with current team data
     updateTeamDisplay() {
-        if (!this.currentTeam || !this.panels) return;
+        if (!this.currentTeam || !this.panels) {
+            console.warn('Team selector: Cannot update display - missing team or panels');
+            return;
+        }
+
+        console.log('Team selector: Updating display for team:', this.currentTeam);
 
         // Clear all panels first
         this.panels.clearAllPanels();
 
         // Get team entity data from Home Assistant
-        const entityState = this.panels.homeAssistant.getEntityState(this.currentTeam.entity_id);
+        let entityState = null;
+        if (this.panels.homeAssistant) {
+            entityState = this.panels.homeAssistant.getEntityState(this.currentTeam.entity_id);
+        }
         
         if (entityState) {
+            console.log('Team selector: Found entity state, displaying team data');
             // Display team in center panel
             this.panels.createEntityElement('controls', this.currentTeam.entity_id, entityState);
         } else {
+            console.log('Team selector: No entity state found, creating placeholder');
             // Create placeholder for team
             const teamElement = document.createElement('div');
             teamElement.className = 'entity-card team-card';
@@ -180,7 +237,7 @@ class TeamSelector {
                     <span class="entity-icon">🏆</span>
                 </div>
                 <div class="entity-content">
-                    <span class="entity-state">Loading...</span>
+                    <span class="entity-state">Loading team data...</span>
                 </div>
             `;
             
@@ -191,11 +248,18 @@ class TeamSelector {
         }
 
         // Subscribe to entity updates if connected to Home Assistant
-        if (this.panels.homeAssistant.isConnected) {
-            this.panels.homeAssistant.send({
-                type: 'subscribe_entities',
-                entity_ids: [this.currentTeam.entity_id]
-            });
+        if (this.panels.homeAssistant && this.panels.homeAssistant.isConnected) {
+            console.log('Team selector: Subscribing to entity updates for:', this.currentTeam.entity_id);
+            try {
+                this.panels.homeAssistant.send({
+                    type: 'subscribe_entities',
+                    entity_ids: [this.currentTeam.entity_id]
+                });
+            } catch (error) {
+                console.error('Team selector: Failed to subscribe to entity updates:', error);
+            }
+        } else {
+            console.log('Team selector: Home Assistant not connected, skipping subscription');
         }
     }
 
@@ -313,8 +377,21 @@ class TeamSelector {
     showTeamNotification(team) {
         if (!this.config) return;
         
-        const message = `Team: ${team.name || this.formatEntityName(team.entity_id)}`;
+        const teamName = team.name || this.formatEntityName(team.entity_id);
+        const message = `Team changed to: ${teamName}`;
+        
+        // Show the notification
         this.config.showNotification(message, 'info');
+        
+        // Also show a secondary notification about data loading
+        setTimeout(() => {
+            this.config.showNotification('Loading team data...', 'info');
+        }, 500);
+        
+        // And a success notification when data should be loaded
+        setTimeout(() => {
+            this.config.showNotification('Team data updated', 'success');
+        }, 2000);
     }
 
     // Format entity name
@@ -339,6 +416,9 @@ class TeamSelector {
     destroy() {
         if (this.watchInterval) {
             clearInterval(this.watchInterval);
+        }
+        if (this.retryTimer) {
+            clearTimeout(this.retryTimer);
         }
     }
 }

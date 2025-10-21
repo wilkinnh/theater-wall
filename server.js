@@ -32,7 +32,6 @@ console.log('HOME_ASSISTANT_URL:', process.env.HOME_ASSISTANT_URL ? 'SET' : 'MIS
 console.log('HA_URL:', process.env.HA_URL ? 'SET' : 'MISSING');
 console.log('HOME_ASSISTANT_TOKEN:', process.env.HOME_ASSISTANT_TOKEN ? 'SET' : 'MISSING');
 console.log('HA_TOKEN:', process.env.HA_TOKEN ? 'SET' : 'MISSING');
-console.log('GAME_SCORE_ENTITY:', process.env.GAME_SCORE_ENTITY || 'MISSING');
 console.log('================================');
 
 // Import API functions
@@ -116,11 +115,7 @@ const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
             HOME_ASSISTANT_URL: haUrl,
-            HOME_ASSISTANT_TOKEN: haToken,
-            GAME_SCORE_ENTITY: process.env.GAME_SCORE_ENTITY || '',
-            VIDEO_SOURCES: process.env.VIDEO_SOURCES || 'assets/videos/ric-flair.mp4',
-            PANEL_WIDTH: process.env.PANEL_WIDTH || '30',
-            PANEL_GAP: process.env.PANEL_GAP || '2'
+            HOME_ASSISTANT_TOKEN: haToken
         }));
         return;
     }

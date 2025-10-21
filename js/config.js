@@ -96,37 +96,9 @@ class TheaterWallConfig {
                     console.log('❌ HOME_ASSISTANT_TOKEN is empty');
                 }
                 
-                if (envConfig.GAME_SCORE_ENTITY) {
-                    this.config.gameScore = envConfig.GAME_SCORE_ENTITY;
-                    console.log('✅ GAME_SCORE_ENTITY set to:', envConfig.GAME_SCORE_ENTITY);
-                    // Also update sensors array
-                    if (this.config.entities.sensors.length === 0) {
-                        this.config.entities.sensors = [envConfig.GAME_SCORE_ENTITY];
-                    }
-                } else {
-                    console.log('❌ GAME_SCORE_ENTITY is empty');
-                }
-                
-                if (envConfig.VIDEO_SOURCES) {
-                    const sources = envConfig.VIDEO_SOURCES.split(',').map(s => s.trim());
-                    this.config.video.defaultSources = sources;
-                    console.log('✅ VIDEO_SOURCES set to:', sources);
-                }
-                
-                if (envConfig.PANEL_WIDTH) {
-                    this.config.panelWidth = parseInt(envConfig.PANEL_WIDTH);
-                    console.log('✅ PANEL_WIDTH set to:', envConfig.PANEL_WIDTH);
-                }
-                
-                if (envConfig.PANEL_GAP) {
-                    this.config.panelGap = parseInt(envConfig.PANEL_GAP);
-                    console.log('✅ PANEL_GAP set to:', envConfig.PANEL_GAP);
-                }
-                
                 console.log('=== FINAL CONFIG ===');
                 console.log('homeAssistantUrl:', this.config.homeAssistantUrl);
                 console.log('homeAssistantToken:', this.config.homeAssistantToken ? 'SET (' + this.config.homeAssistantToken.length + ' chars)' : 'MISSING');
-                console.log('gameScore:', this.config.gameScore);
                 console.log('========================');
                 
             } else {

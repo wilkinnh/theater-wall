@@ -7,8 +7,7 @@
     "dev": "live-server --port=8080 --host=0.0.0.0 --open=/index.html --watch=css/,js/,config/ --ignore=.git,node_modules",
     "dev:env": "node scripts/dev-env.js",
     "build:env": "node scripts/build-env.js",
-    "start": "live-server --port=8080 --host=0.0.0.0 --open=/index.html",
-    "build": "npm run build:env && echo 'Environment variables built into env.js'",
+    "start": "node server.js",
     "serve": "npm run build:env && python -m http.server 8080 --bind 0.0.0.0",
     "docker:build": "docker build -t theater-wall .",
     "docker:run": "docker run -p 8080:80 theater-wall"
@@ -22,9 +21,11 @@
   ],
   "author": "",
   "license": "MIT",
-  "devDependencies": {
-    "live-server": "^1.2.2",
+  "dependencies": {
     "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "live-server": "^1.2.2"
   },
   "engines": {
     "node": ">=14.0.0"

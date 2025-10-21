@@ -40,12 +40,12 @@ class TheaterWallConfig {
         };
         
         this.config = { ...this.defaultConfig };
-        this.loadConfig();
         this.initEventListeners();
+        this.loadConfig();
     }
 
     // Load configuration from localStorage and environment variables
-    loadConfig() {
+    async loadConfig() {
         try {
             // Start with default configuration
             this.config = { ...this.defaultConfig };
@@ -56,25 +56,108 @@ class TheaterWallConfig {
                 this.config = { ...this.config, ...JSON.parse(savedConfig) };
             }
             
-            // Apply environment variable overrides
-            if (window.envConfigLoader) {
-                const envStatus = window.envConfigLoader.getConfigStatus();
-                console.log('Environment config status:', envStatus);
-                this.config = window.envConfigLoader.applyToConfig(this.config);
-                console.log('Config after env override:', {
-                    haUrl: this.config.homeAssistantUrl ? 'SET' : 'MISSING',
-                    haToken: this.config.homeAssistantToken ? 'SET' : 'MISSING',
-                    gameScore: this.config.gameScore || 'MISSING'
-                });
-            } else {
-                console.warn('Environment config loader not found');
-            }
+            // Load environment variables from server API
+            await this.loadEnvironmentConfig();
             
         } catch (error) {
             console.warn('Failed to load configuration:', error);
             this.config = { ...this.defaultConfig };
         }
         this.applyConfig();
+    }
+
+    // Load environment configuration from server API
+    async loadEnvironmentConfig() {
+        console.log('=== FRONTEND ENV LOADING DEBUG ===');
+        console.log('Current server:', window.location.origin);
+        
+        try {
+            console.log('Fetching /api/env...');
+            const response = await fetch('/api/env');
+            console.log('Response status:', response.status);
+            
+            if (response.ok) {
+                const envConfig = await response.json();
+                console.log('✅ Running on Node.js server with API support');
+                console.log('Raw envConfig from server:', envConfig);
+                
+                // Update config with environment variables
+                if (envConfig.HOME_ASSISTANT_URL) {
+                    this.config.homeAssistantUrl = envConfig.HOME_ASSISTANT_URL;
+                    console.log('✅ HOME_ASSISTANT_URL set to:', envConfig.HOME_ASSISTANT_URL);
+                } else {
+                    console.log('❌ HOME_ASSISTANT_URL is empty');
+                }
+                
+                if (envConfig.HOME_ASSISTANT_TOKEN) {
+                    this.config.homeAssistantToken = envConfig.HOME_ASSISTANT_TOKEN;
+                    console.log('✅ HOME_ASSISTANT_TOKEN set (length:', envConfig.HOME_ASSISTANT_TOKEN.length, ')');
+                } else {
+                    console.log('❌ HOME_ASSISTANT_TOKEN is empty');
+                }
+                
+                if (envConfig.GAME_SCORE_ENTITY) {
+                    this.config.gameScore = envConfig.GAME_SCORE_ENTITY;
+                    console.log('✅ GAME_SCORE_ENTITY set to:', envConfig.GAME_SCORE_ENTITY);
+                    // Also update sensors array
+                    if (this.config.entities.sensors.length === 0) {
+                        this.config.entities.sensors = [envConfig.GAME_SCORE_ENTITY];
+                    }
+                } else {
+                    console.log('❌ GAME_SCORE_ENTITY is empty');
+                }
+                
+                if (envConfig.VIDEO_SOURCES) {
+                    const sources = envConfig.VIDEO_SOURCES.split(',').map(s => s.trim());
+                    this.config.video.defaultSources = sources;
+                    console.log('✅ VIDEO_SOURCES set to:', sources);
+                }
+                
+                if (envConfig.PANEL_WIDTH) {
+                    this.config.panelWidth = parseInt(envConfig.PANEL_WIDTH);
+                    console.log('✅ PANEL_WIDTH set to:', envConfig.PANEL_WIDTH);
+                }
+                
+                if (envConfig.PANEL_GAP) {
+                    this.config.panelGap = parseInt(envConfig.PANEL_GAP);
+                    console.log('✅ PANEL_GAP set to:', envConfig.PANEL_GAP);
+                }
+                
+                console.log('=== FINAL CONFIG ===');
+                console.log('homeAssistantUrl:', this.config.homeAssistantUrl);
+                console.log('homeAssistantToken:', this.config.homeAssistantToken ? 'SET (' + this.config.homeAssistantToken.length + ' chars)' : 'MISSING');
+                console.log('gameScore:', this.config.gameScore);
+                console.log('========================');
+                
+            } else {
+                console.error('Failed to fetch /api/env, status:', response.status);
+            }
+        } catch (error) {
+            console.error('❌ Not running on Node.js server or API not available');
+            console.error('Error:', error.message);
+            console.log('💡 To use environment variables, run: npm start');
+            console.log('💡 Or use: node server.js');
+            console.log('💡 Current server does not support environment variable loading');
+            
+            // Try to load from env-config.js fallback
+            this.loadFallbackConfig();
+        }
+    }
+
+    // Fallback configuration loading
+    loadFallbackConfig() {
+        console.log('=== LOADING FALLBACK CONFIG ===');
+        
+        // Check if env-config.js is available
+        if (window.envConfigLoader) {
+            console.log('✅ Using env-config.js fallback');
+            const envStatus = window.envConfigLoader.getConfigStatus();
+            console.log('Fallback env status:', envStatus);
+            this.config = window.envConfigLoader.applyToConfig(this.config);
+        } else {
+            console.log('❌ No fallback configuration available');
+            console.log('💡 Please run the Node.js server for environment variable support');
+        }
     }
 
     // Save configuration to localStorage

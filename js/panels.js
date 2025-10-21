@@ -59,6 +59,13 @@ class PanelManager {
                     clock: gameScoreState.attributes?.clock,
                     lastUpdate: gameScoreState.attributes?.last_update
                 });
+                
+                // 🔄 RELOAD GAME SCORE when states are loaded
+                console.log('🔄 States loaded - reloading game score for:', gameScoreEntity);
+                this.loadGameScore(gameScoreEntity);
+            } else {
+                console.log('🔄 Game score entity not found in states, using sample data');
+                this.loadGameScore(gameScoreEntity);
             }
             
             this.displayEntities(states);
@@ -83,12 +90,15 @@ class PanelManager {
         const entitiesConfig = this.config.getEntitiesConfig();
         const gameScoreEntity = this.config.get('gameScore');
         
+        console.log('🔄 loadEntities called - gameScoreEntity:', gameScoreEntity);
+        console.log('🔄 Home Assistant connected:', this.homeAssistant.isConnected);
+        
         // Clear existing entities
         this.clearAllPanels();
         
         // Load game score if configured
         if (gameScoreEntity) {
-            console.log('Loading game score entity:', gameScoreEntity);
+            console.log('🔄 Loading game score entity:', gameScoreEntity);
             this.loadGameScore(gameScoreEntity);
         } else {
             // Load regular entities if no game score configured
@@ -101,22 +111,51 @@ class PanelManager {
     // Load game score display
     loadGameScore(gameScoreEntity) {
         console.log('🎮 loadGameScore called with:', gameScoreEntity);
+        console.log('🎮 Home Assistant connected:', this.homeAssistant.isConnected);
+        console.log('🎮 Available entities count:', this.homeAssistant.entities.size);
+        
+        // Subscribe to the new entity for real-time updates
+        this.subscribeToGameScoreEntity(gameScoreEntity);
         
         const state = this.homeAssistant.getEntityState(gameScoreEntity);
         console.log('🎮 Home Assistant state for', gameScoreEntity, ':', state);
         
         if (state && state.attributes) {
-            console.log('🎮 Using real entity data for:', gameScoreEntity);
+            console.log('🎮 ✅ Using real entity data for:', gameScoreEntity);
             this.displayGameScore(state);
             // Create a hidden entity element for real-time updates (don't add to panel)
             this.createHiddenEntityElement(gameScoreEntity, state);
         } else {
-            console.log('🎮 No real data found, creating sample data for:', gameScoreEntity);
+            console.log('🎮 ❌ No real data found, creating sample data for:', gameScoreEntity);
             // Create sample game data for testing with the correct entity_id
             const sampleGameData = this.createSampleGameData(gameScoreEntity);
             this.displayGameScore(sampleGameData);
             // Create a hidden entity element for real-time updates (don't add to panel)
             this.createHiddenEntityElement(gameScoreEntity, sampleGameData);
+        }
+    }
+
+    // Subscribe to game score entity for real-time updates
+    subscribeToGameScoreEntity(entityId) {
+        if (!this.homeAssistant.isConnected) {
+            console.log('🎮 Home Assistant not connected, skipping subscription');
+            return;
+        }
+
+        console.log('🎮 Subscribing to entity updates for:', entityId);
+        
+        // Subscribe to state changes for this entity
+        try {
+            this.homeAssistant.send({
+                type: 'subscribe_events',
+                event_type: 'state_changed',
+                event_data: {
+                    entity_id: entityId
+                }
+            });
+            console.log('🎮 Successfully subscribed to:', entityId);
+        } catch (error) {
+            console.error('🎮 Failed to subscribe to', entityId, ':', error);
         }
     }
 
@@ -214,58 +253,58 @@ class PanelManager {
             entity_id: entityId,
             state: 'active',
             attributes: {
-                attribution: 'Data provided by ESPN',
+                attribution: 'NO REAL DATA - Entity not found in Home Assistant',
                 sport: 'football',
                 sport_path: 'football',
                 league: 'NFL',
                 league_path: 'nfl',
                 league_logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png',
                 season: 'regular-season',
-                team_abbr: 'TEAM', // This should come from real sensor data
-                opponent_abbr: 'OPP',
-                event_name: `${teamName} @ Opponent`,
+                team_abbr: 'NO DATA',
+                opponent_abbr: 'NO DATA',
+                event_name: `⚠️ ${entityId} - NO REAL DATA`,
                 event_url: 'https://www.espn.com/nfl/game',
                 date: '2025-10-20T00:20Z',
-                kickoff_in: 'Live now',
+                kickoff_in: 'Entity not found in Home Assistant',
                 series_summary: null,
-                venue: 'Stadium',
-                location: 'City, State, USA',
-                tv_network: 'ESPN',
+                venue: 'Check Home Assistant',
+                location: 'Entity: ' + entityId,
+                tv_network: 'Configure sensor in HA',
                 odds: null,
                 overunder: null,
-                team_name: teamName,
-                team_long_name: teamName,
+                team_name: 'NO DATA',
+                team_long_name: 'Entity not found: ' + entityId,
                 team_id: '1',
-                team_record: '5-0',
+                team_record: '0-0',
                 team_rank: null,
                 team_conference_id: null,
                 team_homeaway: 'away',
                 team_logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/default.png',
                 team_url: 'https://www.espn.com/nfl/team',
-                team_colors: ['#000000', '#ffffff'],
-                team_score: '28',
-                team_win_probability: 0.75,
+                team_colors: ['#ff0000', '#ffffff'],
+                team_score: '??',
+                team_win_probability: 0,
                 team_winner: null,
                 team_timeouts: 3,
-                opponent_name: 'Opponent',
-                opponent_long_name: 'Opponent Team',
+                opponent_name: 'NO DATA',
+                opponent_long_name: 'Create sensor in Home Assistant',
                 opponent_id: '99',
-                opponent_record: '2-3',
+                opponent_record: '0-0',
                 opponent_rank: null,
                 opponent_conference_id: null,
                 opponent_homeaway: 'home',
                 opponent_logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/default.png',
                 opponent_url: 'https://www.espn.com/nfl/team',
                 opponent_colors: ['#ffffff', '#000000'],
-                opponent_score: '14',
-                opponent_win_probability: 0.25,
+                opponent_score: '??',
+                opponent_win_probability: 0,
                 opponent_winner: null,
                 opponent_timeouts: 3,
-                quarter: '3',
-                clock: '5:30 - 3rd',
-                possession: '1',
-                last_play: 'Touchdown scored!',
-                down_distance_text: '1st & 10 at OPP 25',
+                quarter: '??',
+                clock: 'NO DATA',
+                possession: null,
+                last_play: 'Entity not found in Home Assistant',
+                down_distance_text: 'Create sensor: ' + entityId,
                 outs: null,
                 balls: null,
                 strikes: null,
@@ -279,10 +318,10 @@ class PanelManager {
                 team_sets_won: null,
                 opponent_sets_won: null,
                 last_update: new Date().toLocaleString(),
-                api_message: 'Sample data - waiting for real sensor data',
-                api_url: 'http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
-                icon: 'mdi:football',
-                friendly_name: teamName
+                api_message: '⚠️ ENTITY NOT FOUND - Create this sensor in Home Assistant',
+                api_url: 'Entity ID: ' + entityId,
+                icon: 'mdi:alert',
+                friendly_name: '⚠️ ' + teamName + ' (NOT FOUND)'
             },
             last_updated: new Date().toISOString()
         };
@@ -707,11 +746,12 @@ class PanelManager {
     updateEntity(entityId, state) {
         const gameScoreEntity = this.config.get('gameScore');
         
-        console.log('updateEntity called:', entityId, 'gameScoreEntity:', gameScoreEntity);
+        console.log('🎮 updateEntity called:', entityId, 'gameScoreEntity:', gameScoreEntity);
         
         // Always process game score entity updates
         if (entityId === gameScoreEntity) {
-            console.log('🎮 Updating game score display for:', entityId);
+            console.log('🎮 🔄 UPDATING game score display for:', entityId);
+            console.log('🎮 New state data:', state);
             
             // Update the 3-panel display with new game data
             this.displayGameScore(state);
@@ -719,7 +759,7 @@ class PanelManager {
             // Also update the hidden entity element for future updates
             const element = this.entityElements.get(entityId);
             if (element) {
-                console.log('Updating hidden element for:', entityId);
+                console.log('🎮 Updating hidden element for:', entityId);
                 
                 // Update classes
                 element.classList.remove('on', 'off', 'unavailable');
@@ -744,10 +784,10 @@ class PanelManager {
                 element.classList.add('fade-in');
                 setTimeout(() => element.classList.remove('fade-in'), 500);
             } else {
-                console.log('No hidden element found for game score entity:', entityId);
+                console.log('🎮 No hidden element found for game score entity:', entityId);
             }
         } else {
-            console.log('Ignoring non-game-score entity update:', entityId);
+            console.log('🎮 Ignoring non-game-score entity update:', entityId);
         }
     }
 

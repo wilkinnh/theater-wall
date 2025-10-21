@@ -101,6 +101,23 @@ class TheaterWallConfig {
                 console.log('homeAssistantToken:', this.config.homeAssistantToken ? 'SET (' + this.config.homeAssistantToken.length + ' chars)' : 'MISSING');
                 console.log('========================');
                 
+                // 🔄 Trigger Home Assistant connection after config loads
+                console.log('🔄 Triggering Home Assistant connection after config load');
+                setTimeout(() => {
+                    if (window.homeAssistantClient && !window.homeAssistantClient.isConnected) {
+                        console.log('🔄 Connecting to Home Assistant after config load');
+                        console.log('🔄 HA Client config before connect:', window.homeAssistantClient.config);
+                        // Update the HA client config with the new values
+                        window.homeAssistantClient.config = this.getHomeAssistantConfig();
+                        console.log('🔄 Updated HA Client config:', window.homeAssistantClient.config);
+                        window.homeAssistantClient.connect();
+                    } else if (window.homeAssistantClient && window.homeAssistantClient.isConnected) {
+                        console.log('🔄 Home Assistant already connected');
+                    } else {
+                        console.log('🔄 Home Assistant client not available yet');
+                    }
+                }, 1500); // Increased delay to ensure config is fully applied
+                
             } else {
                 console.error('Failed to fetch /api/env, status:', response.status);
             }

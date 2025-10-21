@@ -100,15 +100,20 @@ class PanelManager {
 
     // Load game score display
     loadGameScore(gameScoreEntity) {
+        console.log('🎮 loadGameScore called with:', gameScoreEntity);
+        
         const state = this.homeAssistant.getEntityState(gameScoreEntity);
+        console.log('🎮 Home Assistant state for', gameScoreEntity, ':', state);
         
         if (state && state.attributes) {
+            console.log('🎮 Using real entity data for:', gameScoreEntity);
             this.displayGameScore(state);
             // Create a hidden entity element for real-time updates (don't add to panel)
             this.createHiddenEntityElement(gameScoreEntity, state);
         } else {
-            // Create sample game data for testing
-            const sampleGameData = this.createSampleGameData();
+            console.log('🎮 No real data found, creating sample data for:', gameScoreEntity);
+            // Create sample game data for testing with the correct entity_id
+            const sampleGameData = this.createSampleGameData(gameScoreEntity);
             this.displayGameScore(sampleGameData);
             // Create a hidden entity element for real-time updates (don't add to panel)
             this.createHiddenEntityElement(gameScoreEntity, sampleGameData);
@@ -199,9 +204,14 @@ class PanelManager {
     }
 
     // Create sample game data for testing
-    createSampleGameData() {
+    createSampleGameData(entityId = 'sensor.atlanta_falcons') {
+        console.log('🎮 Creating sample data for entity:', entityId);
+        
+        // Extract team name from entity ID
+        const teamName = entityId.replace('sensor.', '').replace(/_/g, ' ');
+        
         return {
-            entity_id: 'sensor.atlanta_falcons',
+            entity_id: entityId,
             state: 'active',
             attributes: {
                 attribution: 'Data provided by ESPN',
@@ -211,51 +221,51 @@ class PanelManager {
                 league_path: 'nfl',
                 league_logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png',
                 season: 'regular-season',
-                team_abbr: 'ATL',
-                opponent_abbr: 'SF',
-                event_name: 'ATL @ SF',
-                event_url: 'https://www.espn.com/nfl/game?gameId=401772924',
+                team_abbr: 'TEAM', // This should come from real sensor data
+                opponent_abbr: 'OPP',
+                event_name: `${teamName} @ Opponent`,
+                event_url: 'https://www.espn.com/nfl/game',
                 date: '2025-10-20T00:20Z',
-                kickoff_in: '46 minutes ago',
+                kickoff_in: 'Live now',
                 series_summary: null,
-                venue: "Levi's Stadium",
-                location: 'Santa Clara, CA, USA',
-                tv_network: 'NBC',
+                venue: 'Stadium',
+                location: 'City, State, USA',
+                tv_network: 'ESPN',
                 odds: null,
                 overunder: null,
-                team_name: 'Falcons',
-                team_long_name: 'Atlanta Falcons',
+                team_name: teamName,
+                team_long_name: teamName,
                 team_id: '1',
-                team_record: '3-2',
+                team_record: '5-0',
                 team_rank: null,
                 team_conference_id: null,
                 team_homeaway: 'away',
-                team_logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/atl.png',
-                team_url: 'https://www.espn.com/nfl/team/_/name/atl/atlanta-falcons',
-                team_colors: ['#a71930', '#000000'],
-                team_score: '3',
-                team_win_probability: 0.6305000000000001,
+                team_logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/default.png',
+                team_url: 'https://www.espn.com/nfl/team',
+                team_colors: ['#000000', '#ffffff'],
+                team_score: '28',
+                team_win_probability: 0.75,
                 team_winner: null,
                 team_timeouts: 3,
-                opponent_name: '49ers',
-                opponent_long_name: 'San Francisco 49ers',
-                opponent_id: '25',
-                opponent_record: '4-2',
+                opponent_name: 'Opponent',
+                opponent_long_name: 'Opponent Team',
+                opponent_id: '99',
+                opponent_record: '2-3',
                 opponent_rank: null,
                 opponent_conference_id: null,
                 opponent_homeaway: 'home',
-                opponent_logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/sf.png',
-                opponent_url: 'https://www.espn.com/nfl/team/_/name/sf/san-francisco-49ers',
-                opponent_colors: ['#aa0000', '#b3995d'],
-                opponent_score: '0',
-                opponent_win_probability: 0.3695,
+                opponent_logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/default.png',
+                opponent_url: 'https://www.espn.com/nfl/team',
+                opponent_colors: ['#ffffff', '#000000'],
+                opponent_score: '14',
+                opponent_win_probability: 0.25,
                 opponent_winner: null,
                 opponent_timeouts: 3,
-                quarter: '2',
-                clock: '8:58 - 2nd',
+                quarter: '3',
+                clock: '5:30 - 3rd',
                 possession: '1',
-                last_play: '(Shotgun) M.Penix pass incomplete short right to B.Robinson.',
-                down_distance_text: '2nd & 10 at ATL 49',
+                last_play: 'Touchdown scored!',
+                down_distance_text: '1st & 10 at OPP 25',
                 outs: null,
                 balls: null,
                 strikes: null,
@@ -268,11 +278,11 @@ class PanelManager {
                 opponent_total_shots: null,
                 team_sets_won: null,
                 opponent_sets_won: null,
-                last_update: '2025-10-19 21:06:38-04:00',
-                api_message: 'Cached data',
-                api_url: 'http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard?lang=en&limit=50&dates=20251018-20251024',
+                last_update: new Date().toLocaleString(),
+                api_message: 'Sample data - waiting for real sensor data',
+                api_url: 'http://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard',
                 icon: 'mdi:football',
-                friendly_name: 'atlanta_falcons'
+                friendly_name: teamName
             },
             last_updated: new Date().toISOString()
         };
@@ -695,44 +705,50 @@ class PanelManager {
 
     // Update entity display
     updateEntity(entityId, state) {
-        // Only process updates for entities we care about
         const gameScoreEntity = this.config.get('gameScore');
-        if (entityId !== gameScoreEntity) {
-            return;
-        }
         
-        console.log('updateEntity called:', entityId, state);
+        console.log('updateEntity called:', entityId, 'gameScoreEntity:', gameScoreEntity);
         
-        const element = this.entityElements.get(entityId);
-        if (!element) {
-            console.log('No element found for entity:', entityId);
-            return;
-        }
-        
-        console.log('Updating element for:', entityId);
-        
-        // Update classes
-        element.classList.remove('on', 'off', 'unavailable');
-        if (state.state === 'on') {
-            element.classList.add('on');
-        } else if (state.state === 'unavailable') {
-            element.classList.add('unavailable');
+        // Always process game score entity updates
+        if (entityId === gameScoreEntity) {
+            console.log('🎮 Updating game score display for:', entityId);
+            
+            // Update the 3-panel display with new game data
+            this.displayGameScore(state);
+            
+            // Also update the hidden entity element for future updates
+            const element = this.entityElements.get(entityId);
+            if (element) {
+                console.log('Updating hidden element for:', entityId);
+                
+                // Update classes
+                element.classList.remove('on', 'off', 'unavailable');
+                if (state.state === 'on') {
+                    element.classList.add('on');
+                } else if (state.state === 'unavailable') {
+                    element.classList.add('unavailable');
+                } else {
+                    element.classList.add('off');
+                }
+                
+                // Update content
+                const content = this.createEntityContent(entityId, state);
+                element.innerHTML = content;
+                
+                // Re-add click handler
+                element.addEventListener('click', () => {
+                    this.handleEntityClick(entityId, state);
+                });
+                
+                // Add animation
+                element.classList.add('fade-in');
+                setTimeout(() => element.classList.remove('fade-in'), 500);
+            } else {
+                console.log('No hidden element found for game score entity:', entityId);
+            }
         } else {
-            element.classList.add('off');
+            console.log('Ignoring non-game-score entity update:', entityId);
         }
-        
-        // Update content
-        const content = this.createEntityContent(entityId, state);
-        element.innerHTML = content;
-        
-        // Re-add click handler
-        element.addEventListener('click', () => {
-            this.handleEntityClick(entityId, state);
-        });
-        
-        // Add animation
-        element.classList.add('fade-in');
-        setTimeout(() => element.classList.remove('fade-in'), 500);
     }
 
     // Handle entity click

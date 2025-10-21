@@ -54,7 +54,8 @@ class TeamSelector {
                 
                 if (configHash !== this.lastConfigHash) {
                     this.lastConfigHash = configHash;
-                    this.handleExternalTeamChange(teamData.team);
+                    console.log('Team selector: API response received:', teamData);
+                    this.handleExternalTeamChange(teamData);
                 }
             }
         } catch (error) {
@@ -81,38 +82,79 @@ class TeamSelector {
         if (!teamData) return;
 
         console.log('Team selector: External team change detected', teamData);
+        console.log('Team selector: Current team:', this.currentTeam);
         
         let newTeam;
         if (typeof teamData === 'string') {
             newTeam = { entity_id: teamData, name: this.formatEntityName(teamData) };
-        } else {
+        } else if (teamData.name && teamData.entity_id) {
+            // API response format: { name: "Lakers", entity_id: "sensor.lakers_score" }
             newTeam = teamData;
+        } else if (teamData.team) {
+            // Fallback for nested format
+            newTeam = teamData.team;
+        } else {
+            console.warn('Team selector: Unknown team data format', teamData);
+            return;
         }
 
-        if (this.currentTeam?.entity_id !== newTeam.entity_id) {
-            this.setTeam(newTeam);
+        // Always update if it's an external change, even if entity_id matches
+        // This ensures data is refreshed properly
+        const isDifferentTeam = this.currentTeam?.entity_id !== newTeam.entity_id;
+        const isExternalChange = true; // This method is only called for external changes
+        
+        if (isDifferentTeam || isExternalChange) {
+            console.log('Team selector: Setting new team (different:', isDifferentTeam, ', external:', isExternalChange, ')', newTeam);
+            this.setTeam(newTeam, true); // Force update
+        } else {
+            console.log('Team selector: Team unchanged, skipping update');
         }
     }
 
     // Set the current team
-    setTeam(team) {
+    setTeam(team, forceUpdate = false) {
         if (!team || !team.entity_id) {
             console.warn('Team selector: Invalid team data', team);
             return;
         }
 
+        const isDifferentTeam = this.currentTeam?.entity_id !== team.entity_id;
+        
         this.currentTeam = team;
         
         // Update localStorage
         localStorage.setItem('theater-wall-selected-team', JSON.stringify(team));
         
-        // Update display
-        this.updateTeamDisplay();
+        // Update the global configuration to use the new entity
+        if (this.config) {
+            this.config.config.gameScore = team.entity_id;
+            
+            // Update sensors array to include the team entity
+            if (!this.config.config.entities.sensors.includes(team.entity_id)) {
+                this.config.config.entities.sensors = [team.entity_id];
+            }
+            
+            console.log('Team selector: Updated config gameScore to:', team.entity_id);
+        }
+        
+        // Always update display and reload entities for external changes
+        if (forceUpdate || isDifferentTeam) {
+            console.log('Team selector: Updating display and reloading entities (force:', forceUpdate, ', different:', isDifferentTeam, ')');
+            
+            // Update display
+            this.updateTeamDisplay();
+            
+            // Reload all entities to show the new team data
+            if (this.panels) {
+                console.log('Team selector: Reloading entities for new team');
+                this.panels.loadEntities();
+            }
+        }
         
         // Show notification
         this.showTeamNotification(team);
         
-        console.log('Team selector: Team set to', team);
+        console.log('Team selector: Team set to', team, '(force:', forceUpdate, ')');
     }
 
     // Update the display with current team data

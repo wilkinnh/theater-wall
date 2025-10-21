@@ -329,6 +329,7 @@
     font-size: 90px;
     font-weight: 900;
     line-height: 1;
+    margin-top: 40px;
     margin-bottom: 10px;
     text-transform: uppercase;
     letter-spacing: -2px;
@@ -338,7 +339,7 @@
 }
 
 .team-score {
-    font-size: 75px;
+    font-size: 200px;
     font-weight: 700;
     line-height: 1;
     margin-bottom: 20px;
@@ -346,7 +347,7 @@
 }
 
 .team-record {
-    font-size: 16px;
+    font-size: 22px;
     color: #ccc;
     font-weight: 400;
 }

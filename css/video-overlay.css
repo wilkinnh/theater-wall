@@ -7,8 +7,8 @@
     width: 100vw;
     height: 100vh;
     background: #000;
-    z-index: 3000;
-    display: flex;
+    z-index: 9999;
+    display: none;
     align-items: center;
     justify-content: center;
     opacity: 0;
@@ -16,6 +16,7 @@
 }
 
 .video-overlay.active {
+    display: flex !important;
     opacity: 1;
 }
 

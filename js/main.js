@@ -18,7 +18,13 @@ class TheaterWallApp {
     getHUDParameter() {
         const urlParams = new URLSearchParams(window.location.search);
         const showHUD = urlParams.get('showHUD');
-        return showHUD === 'true';
+        const result = showHUD === 'true';
+        console.log(`🎬 HUD Parameter Check:`);
+        console.log(`  - Full URL: ${window.location.href}`);
+        console.log(`  - Query string: ${window.location.search}`);
+        console.log(`  - showHUD parameter: "${showHUD}"`);
+        console.log(`  - Parsed result: ${result}`);
+        return result;
     }
 
     // Initialize the application
@@ -57,6 +63,13 @@ class TheaterWallApp {
             // Mark as initialized
             this.isInitialized = true;
             
+            // Re-apply HUD visibility after all components are initialized
+            // This ensures video controls and other dynamic elements are properly hidden
+            setTimeout(() => {
+                console.log('🎬 Re-applying HUD visibility after initialization...');
+                this.toggleHUDVisibility();
+            }, 100);
+            
             console.log(`Theater Wall Display initialized in ${Date.now() - this.startTime}ms`);
             console.log(`HUD Mode: ${this.showHUD ? 'ENABLED' : 'HIDDEN (add ?showHUD=true to URL)'}`);
             
@@ -84,6 +97,79 @@ class TheaterWallApp {
         const errors = this.config.validateConfig();
         if (errors.length > 0) {
             console.warn('Configuration issues:', errors);
+        }
+    }
+
+    // Toggle HUD visibility based on URL parameter
+    toggleHUDVisibility() {
+        console.log(`🎬 toggleHUDVisibility called with showHUD = ${this.showHUD}`);
+        
+        if (!this.showHUD) {
+            console.log('🎬 HIDING HUD - Starting to hide elements...');
+            
+            // Hide all HUD elements
+            const hudElements = [
+                '#connection-status',
+                '#config-toggle',
+                '#video-trigger',
+                '#debug-refresh'
+            ];
+            
+            hudElements.forEach(selector => {
+                const element = document.querySelector(selector);
+                if (element) {
+                    element.style.display = 'none';
+                    console.log(`🎬 ✅ Hidden HUD element: ${selector}`);
+                } else {
+                    console.log(`🎬 ⚠️  Element not found: ${selector}`);
+                }
+            });
+            
+            // Check if video controls exist and hide them
+            const videoControls = document.querySelector('.video-controls');
+            if (videoControls) {
+                console.log('🎬 Found video controls, hiding them...');
+                videoControls.style.display = 'none';
+            } else {
+                console.log('🎬 Video controls not found (may not be created yet)');
+            }
+            
+            // Hide video controls during playback with CSS
+            const style = document.createElement('style');
+            style.id = 'hud-hide-style';
+            style.textContent = `
+                .video-controls {
+                    display: none !important;
+                }
+                .config-panel {
+                    display: none !important;
+                }
+                .welcome-message {
+                    display: none !important;
+                }
+                .help-dialog {
+                    display: none !important;
+                }
+                .notification {
+                    display: none !important;
+                }
+                .video-player {
+                    pointer-events: none !important;
+                }
+            `;
+            document.head.appendChild(style);
+            console.log('🎬 ✅ Added HUD hide styles to document');
+            
+            console.log('🎬 HUD Mode: HIDDEN - All controls and status hidden');
+        } else {
+            console.log('🎬 HUD Mode: VISIBLE - All controls and status shown');
+            
+            // Remove any existing hide styles
+            const existingStyle = document.getElementById('hud-hide-style');
+            if (existingStyle) {
+                existingStyle.remove();
+                console.log('🎬 Removed HUD hide styles');
+            }
         }
     }
 
@@ -414,108 +500,6 @@ class TheaterWallApp {
         document.body.appendChild(errorDiv);
     }
 
-    // Toggle HUD visibility based on query parameter
-    toggleHUDVisibility() {
-        const hudElements = [
-            'config-toggle',           // Configuration button
-            'video-trigger',           // Video button
-            'connection-status',       // Connection status
-            'debug-refresh'           // Debug refresh button
-        ];
-        
-        hudElements.forEach(elementId => {
-            const element = document.getElementById(elementId);
-            if (element) {
-                if (this.showHUD) {
-                    element.classList.remove('hud-hidden');
-                    element.classList.add('hud-visible');
-                } else {
-                    element.classList.remove('hud-visible');
-                    element.classList.add('hud-hidden');
-                }
-            }
-        });
-        
-        // Add HUD styles to document if not already present
-        this.addHUDStyles();
-        
-        console.log(`HUD elements ${this.showHUD ? 'shown' : 'hidden'}`);
-    }
-
-    // Add HUD styles to document
-    addHUDStyles() {
-        if (document.getElementById('hud-styles')) return;
-        
-        const hudStyles = document.createElement('style');
-        hudStyles.id = 'hud-styles';
-        hudStyles.textContent = `
-            .hud-hidden {
-                opacity: 0 !important;
-                pointer-events: none !important;
-                transform: scale(0.8) !important;
-                transition: all 0.3s ease !important;
-            }
-            
-            .hud-visible {
-                opacity: 1 !important;
-                pointer-events: auto !important;
-                transform: scale(1) !important;
-                transition: all 0.3s ease !important;
-            }
-            
-            /* Add subtle glow effect when HUD is visible */
-            .hud-visible {
-                box-shadow: 0 0 20px rgba(255, 255, 255, 0.1) !important;
-            }
-            
-            /* HUD indicator in console */
-            .hud-indicator {
-                position: fixed;
-                top: 10px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: rgba(76, 175, 80, 0.9);
-                color: white;
-                padding: 5px 10px;
-                border-radius: 4px;
-                font-size: 12px;
-                z-index: 10000;
-                opacity: 0;
-                transition: opacity 0.3s ease;
-                pointer-events: none;
-            }
-            
-            .hud-indicator.show {
-                opacity: 1;
-            }
-        `;
-        
-        document.head.appendChild(hudStyles);
-        
-        // Show HUD indicator briefly
-        this.showHUDIndicator();
-    }
-
-    // Show HUD indicator briefly
-    showHUDIndicator() {
-        const indicator = document.createElement('div');
-        indicator.className = 'hud-indicator';
-        indicator.textContent = this.showHUD ? 'HUD Enabled' : 'HUD Hidden';
-        document.body.appendChild(indicator);
-        
-        setTimeout(() => {
-            indicator.classList.add('show');
-        }, 100);
-        
-        setTimeout(() => {
-            indicator.classList.remove('show');
-            setTimeout(() => {
-                if (indicator.parentNode) {
-                    document.body.removeChild(indicator);
-                }
-            }, 300);
-        }, 2000);
-    }
 
     // Get application status
     getStatus() {

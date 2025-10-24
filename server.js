@@ -56,6 +56,91 @@ const mimeTypes = {
     '.wasm': 'application/wasm'
 };
 
+// Handle celebration trigger
+function handleTriggerCelebration(req, res) {
+    if (req.method !== 'POST') {
+        res.writeHead(405, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Method not allowed' }));
+        return;
+    }
+
+    let body = '';
+    req.on('data', chunk => {
+        body += chunk.toString();
+    });
+    
+    req.on('end', () => {
+        try {
+            const data = JSON.parse(body);
+            const { videoFile = 'assets/videos/ric-flair-celebration.mp4', autoHide = true, duration = 10000 } = data;
+            
+            console.log(`🎬 Triggering celebration video: ${videoFile}`);
+            
+            // Store celebration trigger data for frontend to pick up
+            const celebrationData = {
+                type: 'celebration_trigger',
+                videoFile,
+                autoHide,
+                duration,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Store in a file for the frontend to poll
+            const fs = require('fs');
+            fs.writeFileSync('celebration-trigger.json', JSON.stringify(celebrationData));
+            
+            console.log(`✅ Celebration trigger stored: ${videoFile}`);
+            
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                success: true,
+                message: `Celebration triggered for ${videoFile}`,
+                data: celebrationData
+            }));
+            
+        } catch (error) {
+            console.error('Celebration trigger error:', error);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                success: false,
+                error: error.message
+            }));
+        }
+    });
+}
+
+// Serve celebration trigger file
+function serveCelebrationTrigger(req, res) {
+    const fs = require('fs');
+    const path = './celebration-trigger.json';
+    
+    try {
+        if (fs.existsSync(path)) {
+            const data = fs.readFileSync(path, 'utf8');
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(data);
+            
+            // Delete the file after serving to prevent re-triggering
+            setTimeout(() => {
+                try {
+                    fs.unlinkSync(path);
+                    console.log('🗑️  Celebration trigger file cleaned up');
+                } catch (error) {
+                    console.log('⚠️  Could not clean up celebration trigger file:', error.message);
+                }
+            }, 1000);
+        } else {
+            // Return empty object if file doesn't exist
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end('{}');
+        }
+    } catch (error) {
+        console.error('Error serving celebration trigger:', error);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Internal server error' }));
+    }
+}
+
 const server = http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url, true);
     const pathname = parsedUrl.pathname;
@@ -120,6 +205,16 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    if (pathname === '/api/trigger-celebration') {
+        handleTriggerCelebration(req, res);
+        return;
+    }
+
+    if (pathname === '/celebration-trigger.json') {
+        serveCelebrationTrigger(req, res);
+        return;
+    }
+
     // Serve static files
     let filePath = path.join(__dirname, pathname === '/' ? 'index.html' : pathname);
 
@@ -180,6 +275,13 @@ server.listen(PORT, () => {
     console.log(`📊 API endpoints:`);
     console.log(`   POST /api/set-team - Set current team`);
     console.log(`   GET  /api/current-team - Get current team`);
+    console.log(`   POST /api/trigger-celebration - Trigger celebration video`);
+    console.log(`   GET  /celebration-trigger.json - Poll for celebration triggers`);
+    console.log(``);
+    console.log(`🎉 Celebration trigger examples:`);
+    console.log(`   curl -X POST http://localhost:${PORT}/api/trigger-celebration \\`);
+    console.log(`        -H "Content-Type: application/json" \\`);
+    console.log(`        -d '{"videoFile": "assets/videos/ric-flair-celebration.mp4"}'`);
     console.log(``);
     console.log(`🏀 Team control examples:`);
     console.log(`   node scripts/change-team.js set "Lakers" "sensor.lakers_score"`);
@@ -190,6 +292,7 @@ server.listen(PORT, () => {
     console.log(`   1-9 - Quick team selection`);
     console.log(`   M - Toggle video mask`);
     console.log(`   Ctrl+, - Settings`);
+    console.log(`   triggerCelebration() - Manual celebration trigger`);
 });
 
 // Graceful shutdown

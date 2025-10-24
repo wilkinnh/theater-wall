@@ -328,7 +328,6 @@
     font-size: 80px;
     font-weight: 900;
     line-height: 1;
-    margin-top: 40px;
     margin-bottom: 10px;
     text-transform: uppercase;
     letter-spacing: -2px;
@@ -343,7 +342,7 @@
     font-family: 'Georgia', 'Times New Roman', serif;
     line-height: 1;
     margin-bottom: 20px;
-    margin-top: 50px;
+    margin-top: 20px;
 }
 
 .team-record {
@@ -429,6 +428,7 @@
     font-size: 16px;
     color: #fff;
     font-weight: 500;
+    text-align: right;
 }
 
 .game-info {
@@ -471,4 +471,67 @@
 .team-49ers .team-abbr {
     color: #aa0000;
     text-shadow: 0 0 20px rgba(170, 0, 0, 0.5);
+}
+
+
+/* Team Logo Image Styling */
+.team-logo {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.team-logo img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    animation: teamLogoGlow 2s ease-in-out infinite alternate;
+}
+
+.fallback-logo {
+    font-size: 64px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    animation: teamLogoGlow 2s ease-in-out infinite alternate;
+    display: none; /* Hidden by default, shown if image fails */
+}
+
+/* Game Score Display Logo Styling */
+.game-score-display .team-logo {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 10px;
+}
+
+.game-score-display .team-logo img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.game-score-display .fallback-logo {
+    font-size: 48px;
+}
+
+/* Team Details Layout */
+.team-details .team-logo {
+    width: 150px;
+    height: 150px;
+    margin-bottom: 10px;
+}
+
+.team-details .team-logo img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.team-details .fallback-logo {
+    font-size: 80px;
+    margin-bottom: 10px;
 }

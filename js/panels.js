@@ -222,6 +222,12 @@ class PanelManager {
             console.log('🎮 Updating left panel with opponent data');
             leftContainer.innerHTML = `
                 <div class="game-score-display team-${attrs.opponent_abbr.toLowerCase()}">
+                    ${attrs.opponent_logo ? `
+                        <div class="team-logo">
+                            <img src="${attrs.opponent_logo}" alt="${attrs.opponent_abbr}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <div class="fallback-logo">🏆</div>
+                        </div>
+                    ` : ''}
                     <div class="team-abbr">${attrs.opponent_abbr}</div>
                     <div class="team-record">${attrs.opponent_record}</div>
                     <div class="team-score">${attrs.opponent_score}</div>
@@ -244,6 +250,12 @@ class PanelManager {
             console.log('🎮 Updating right panel with team data');
             rightContainer.innerHTML = `
                 <div class="game-score-display team-${(attrs.team_abbr || '').toLowerCase()}">
+                    ${attrs.team_logo ? `
+                        <div class="team-logo">
+                            <img src="${attrs.team_logo}" alt="${attrs.team_abbr}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <div class="fallback-logo">🏆</div>
+                        </div>
+                    ` : ''}
                     <div class="team-abbr">${attrs.team_abbr || 'N/A'}</div>
                     <div class="team-record">${attrs.team_record || '0-0'}</div>
                     <div class="team-score">${attrs.team_score || '0'}</div>
@@ -272,8 +284,8 @@ class PanelManager {
                 league_path: 'nfl',
                 league_logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png',
                 season: 'regular-season',
-                team_abbr: 'NO DATA',
-                opponent_abbr: 'NO DATA',
+                team_abbr: 'ATL',
+                opponent_abbr: 'NYJ',
                 event_name: `⚠️ ${entityId} - NO REAL DATA`,
                 event_url: 'https://www.espn.com/nfl/game',
                 date: '2025-10-20T00:20Z',
@@ -284,28 +296,28 @@ class PanelManager {
                 tv_network: 'Configure sensor in HA',
                 odds: null,
                 overunder: null,
-                team_name: 'NO DATA',
-                team_long_name: 'Entity not found: ' + entityId,
+                team_name: 'Atlanta Falcons',
+                team_long_name: 'Atlanta Falcons',
                 team_id: '1',
-                team_record: '0-0',
+                team_record: '5-8',
                 team_rank: null,
                 team_conference_id: null,
                 team_homeaway: 'away',
-                team_logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/default.png',
+                team_logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/atl.png',
                 team_url: 'https://www.espn.com/nfl/team',
                 team_colors: ['#ff0000', '#ffffff'],
                 team_score: '??',
                 team_win_probability: 0,
                 team_winner: null,
                 team_timeouts: 3,
-                opponent_name: 'NO DATA',
-                opponent_long_name: 'Create sensor in Home Assistant',
+                opponent_name: 'New York Jets',
+                opponent_long_name: 'New York Jets',
                 opponent_id: '99',
-                opponent_record: '0-0',
+                opponent_record: '6-7',
                 opponent_rank: null,
                 opponent_conference_id: null,
                 opponent_homeaway: 'home',
-                opponent_logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/scoreboard/default.png',
+                opponent_logo: 'https://a.espncdn.com/i/teamlogos/nfl/500/nyj.png',
                 opponent_url: 'https://www.espn.com/nfl/team',
                 opponent_colors: ['#ffffff', '#000000'],
                 opponent_score: '??',

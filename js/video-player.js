@@ -148,12 +148,18 @@ class VideoPlayer {
         const rightPanelRect = rightPanel.getBoundingClientRect();
         
         // Convert to viewport percentage
-        const leftPanelStart = (leftPanelRect.left / window.innerWidth) * 100;
-        const leftPanelWidth = (leftPanelRect.width / window.innerWidth) * 100;
-        const centerPanelStart = (centerPanelRect.left / window.innerWidth) * 100;
-        const centerPanelWidth = (centerPanelRect.width / window.innerWidth) * 100;
-        const rightPanelStart = (rightPanelRect.left / window.innerWidth) * 100;
-        const rightPanelWidth = (rightPanelRect.width / window.innerWidth) * 100;
+        const leftPanelStart = 5;
+        const leftPanelWidth = 25;
+        const centerPanelStart = 38.5;
+        const centerPanelWidth = 23.5;
+        const rightPanelStart = 71;
+        const rightPanelWidth = 23;
+        // const leftPanelStart = (leftPanelRect.left / window.innerWidth) * 100;
+        // const leftPanelWidth = (leftPanelRect.width / window.innerWidth) * 100;
+        // const centerPanelStart = (centerPanelRect.left / window.innerWidth) * 100;
+        // const centerPanelWidth = (centerPanelRect.width / window.innerWidth) * 100;
+        // const rightPanelStart = (rightPanelRect.left / window.innerWidth) * 100;
+        // const rightPanelWidth = (rightPanelRect.width / window.innerWidth) * 100;
         
         console.log('Video mask calculations from DOM:', {
             leftPanelStart,
@@ -216,27 +222,27 @@ class VideoPlayer {
         `;
         
         // Add visual borders around panel areas
-        const panels = [
-            { start: leftPanelStart, width: leftPanelWidth },
-            { start: centerPanelStart, width: centerPanelWidth },
-            { start: rightPanelStart, width: rightPanelWidth }
-        ];
+        // const panels = [
+        //     { start: leftPanelStart, width: leftPanelWidth },
+        //     { start: centerPanelStart, width: centerPanelWidth },
+        //     { start: rightPanelStart, width: rightPanelWidth }
+        // ];
         
-        panels.forEach((panel, index) => {
-            const border = document.createElement('div');
-            border.style.cssText = `
-                position: absolute;
-                left: ${panel.start}vw;
-                top: 0;
-                width: ${panel.width}vw;
-                height: 100vh;
-                border: 2px solid rgba(255, 255, 255, 0.3);
-                box-sizing: border-box;
-                pointer-events: none;
-                z-index: 6;
-            `;
-            maskContainer.appendChild(border);
-        });
+        // panels.forEach((panel, index) => {
+        //     const border = document.createElement('div');
+        //     border.style.cssText = `
+        //         position: absolute;
+        //         left: ${panel.start}vw;
+        //         top: 0;
+        //         width: ${panel.width}vw;
+        //         height: 100vh;
+        //         border: 2px solid rgba(255, 255, 255, 0.3);
+        //         box-sizing: border-box;
+        //         pointer-events: none;
+        //         z-index: 6;
+        //     `;
+        //     maskContainer.appendChild(border);
+        // });
         
         // Insert mask into overlay
         if (this.overlay) {

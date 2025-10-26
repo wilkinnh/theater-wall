@@ -13,6 +13,7 @@
     "autoPlay": false,
     "loop": true,
     "volume": 0.5,
+    "preload": true,
     "defaultSources": [
       "assets/videos/ric-flair.mp4"
     ]

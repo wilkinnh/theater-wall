@@ -14,6 +14,10 @@ class VideoPlayer {
         this.currentVideo = null;
         this.videoSources = [];
         
+        // Simple preloading for projector display
+        this.preloadedVideo = null;
+        this.isVideoPreloaded = false;
+        
         this.init();
     }
 
@@ -23,6 +27,11 @@ class VideoPlayer {
         this.setupEventListeners();
         this.loadVideoSources();
         this.createVideoMask();
+        
+        // Preload the default video for instant playback
+        setTimeout(() => {
+            this.preloadDefaultVideo();
+        }, 1000);
     }
 
     // Setup event listeners
@@ -256,6 +265,45 @@ class VideoPlayer {
         this.videoSources = videoConfig.defaultSources || [];
     }
 
+    // Preload the default video for instant playback
+    preloadDefaultVideo() {
+        if (this.videoSources.length === 0) {
+            console.log('🎬 No videos to preload');
+            return;
+        }
+
+        const videoSource = this.videoSources[0]; // Use first video (ric-flair.mp4)
+        console.log(`🎬 Preloading video: ${videoSource}`);
+
+        // Create hidden video element for preloading
+        const preloadVideo = document.createElement('video');
+        preloadVideo.preload = 'auto';
+        preloadVideo.muted = true; // Muted to avoid autoplay issues
+        preloadVideo.src = videoSource;
+        preloadVideo.style.display = 'none';
+        
+        // Add to DOM to start loading
+        document.body.appendChild(preloadVideo);
+
+        // Listen for preload completion
+        preloadVideo.addEventListener('canplaythrough', () => {
+            console.log(`✅ Video preloaded successfully: ${videoSource}`);
+            this.preloadedVideo = preloadVideo;
+            this.isVideoPreloaded = true;
+            
+            // Remove from DOM but keep reference
+            document.body.removeChild(preloadVideo);
+        });
+
+        preloadVideo.addEventListener('error', (e) => {
+            console.error(`❌ Failed to preload video: ${videoSource}`, e);
+            this.isVideoPreloaded = false;
+        });
+
+        // Start loading
+        preloadVideo.load();
+    }
+
     // Show video selector
     showVideoSelector() {
         if (this.videoSources.length === 0) {
@@ -332,19 +380,46 @@ class VideoPlayer {
         if (!this.player) return;
 
         this.currentVideo = source;
-        this.player.src = source;
-        this.player.load();
         
-        const videoConfig = this.config.getVideoConfig();
-        this.player.loop = videoConfig.loop;
-        this.player.volume = videoConfig.volume;
-        
-        this.showVideoOverlay();
-        
-        this.player.play().catch(error => {
-            console.error('Failed to play video:', error);
-            this.onVideoError(error);
-        });
+        // Check if we have this video preloaded
+        if (this.isVideoPreloaded && this.preloadedVideo.src.includes(source)) {
+            console.log(`🎬 Using preloaded video: ${source}`);
+            
+            // Copy preloaded video to main player
+            this.player.src = source;
+            this.player.load();
+            
+            // Video should play instantly since it's preloaded
+            const videoConfig = this.config.getVideoConfig();
+            this.player.loop = videoConfig.loop;
+            this.player.volume = videoConfig.volume;
+            
+            this.showVideoOverlay();
+            
+            // Try to play immediately
+            this.player.play().catch(error => {
+                console.error('Failed to play preloaded video:', error);
+                this.onVideoError(error);
+            });
+            
+        } else {
+            console.log(`🎬 Loading video on-demand: ${source}`);
+            
+            // Load normally if not preloaded
+            this.player.src = source;
+            this.player.load();
+            
+            const videoConfig = this.config.getVideoConfig();
+            this.player.loop = videoConfig.loop;
+            this.player.volume = videoConfig.volume;
+            
+            this.showVideoOverlay();
+            
+            this.player.play().catch(error => {
+                console.error('Failed to play video:', error);
+                this.onVideoError(error);
+            });
+        }
     }
 
     // Show video overlay
@@ -584,7 +659,8 @@ class VideoPlayer {
             currentVideo: this.currentVideo,
             currentTime: this.player?.currentTime || 0,
             duration: this.player?.duration || 0,
-            volume: this.player?.volume || 0
+            volume: this.player?.volume || 0,
+            isVideoPreloaded: this.isVideoPreloaded
         };
     }
 

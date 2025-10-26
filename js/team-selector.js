@@ -233,7 +233,7 @@ class TeamSelector {
             teamElement.className = 'entity-card team-card';
             teamElement.innerHTML = `
                 <div class="entity-header">
-                    <span class="entity-name">${this.currentTeam.name || this.formatEntityName(this.currentTeam.entity_id)}</span>
+                    <span class="entity-name">-</span>
                     <span class="entity-icon">🏆</span>
                 </div>
                 <div class="entity-content">

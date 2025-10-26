@@ -81,6 +81,19 @@ class PanelManager {
             this.updateEntity(data.entity_id, data.state);
         });
         
+        // Listen for attribute changes (new event type)
+        this.homeAssistant.on('attributes-changed', (data) => {
+            // Only log game score attribute changes
+            if (data.entity_id === this.config.get('gameScore')) {
+                console.log('PanelManager: Game score ATTRIBUTE update received:', data);
+                console.log('PanelManager: Changed attributes:', {
+                    old: data.old_attributes,
+                    new: data.new_attributes
+                });
+            }
+            this.updateEntity(data.entity_id, data.state);
+        });
+        
         // Listen for configuration changes
         window.addEventListener('config-changed', () => {
             this.loadEntities();

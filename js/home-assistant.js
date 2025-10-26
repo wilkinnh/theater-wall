@@ -212,6 +212,15 @@ class HomeAssistantClient {
             }
             
             this.handleStateChanged(event.data);
+        } else if (event.type === 'call_service') {
+            // Handle service call events that might indicate attribute changes
+            this.handleServiceCallEvent(event);
+        } else if (event.type === 'automation_triggered') {
+            // Handle automation triggered events
+            this.handleAutomationTriggeredEvent(event);
+        } else {
+            // Handle other event types that might contain attribute changes
+            this.handleGenericEvent(event);
         }
         
         // Emit to general event listeners
@@ -234,6 +243,134 @@ class HomeAssistantClient {
         }
     }
 
+    // Handle service call events that might indicate attribute changes
+    handleServiceCallEvent(event) {
+        const gameScoreEntity = window.theaterWallConfig?.get('gameScore');
+        
+        // Check if this service call might affect our game score entity
+        if (event.data && event.data.service_data && event.data.service_data.entity_id === gameScoreEntity) {
+            console.log('🎯 Service call event for target entity:', event.type, event.data);
+            
+            // Schedule a refresh of the entity to catch attribute changes
+            setTimeout(() => {
+                this.refreshEntity(gameScoreEntity);
+            }, 500); // Small delay to ensure the service call has completed
+        }
+    }
+
+    // Handle automation triggered events
+    handleAutomationTriggeredEvent(event) {
+        const gameScoreEntity = window.theaterWallConfig?.get('gameScore');
+        
+        // Check if this automation might affect our game score entity
+        if (event.data && event.data.entity_id === gameScoreEntity) {
+            console.log('🎯 Automation triggered for target entity:', event.type, event.data);
+            
+            // Schedule a refresh of the entity to catch attribute changes
+            setTimeout(() => {
+                this.refreshEntity(gameScoreEntity);
+            }, 500);
+        }
+    }
+
+    // Handle generic events that might contain attribute changes
+    handleGenericEvent(event) {
+        const gameScoreEntity = window.theaterWallConfig?.get('gameScore');
+        
+        // Check if this event is related to our target entity
+        if (event.data && (
+            event.data.entity_id === gameScoreEntity ||
+            (event.data.old_state && event.data.old_state.entity_id === gameScoreEntity) ||
+            (event.data.new_state && event.data.new_state.entity_id === gameScoreEntity)
+        )) {
+            console.log('🎯 Generic event for target entity:', event.type, event.data);
+            
+            // Handle like a state change event
+            if (event.data.new_state) {
+                this.handleStateChanged(event.data);
+            }
+        }
+    }
+
+    // Refresh a specific entity to get current state and attributes
+    async refreshEntity(entityId) {
+        try {
+            console.log('🔄 Refreshing entity to check for attribute changes:', entityId);
+            
+            // Get current state
+            const currentState = this.getEntityState(entityId);
+            
+            // Request fresh state from Home Assistant
+            const states = await this.sendWithId({
+                type: 'get_states'
+            });
+            
+            const freshState = states.find(state => state.entity_id === entityId);
+            
+            if (freshState) {
+                // Check if attributes have changed (even if state hasn't)
+                if (currentState) {
+                    const attributesChanged = this.haveAttributesChanged(currentState.attributes, freshState.attributes);
+                    
+                    if (attributesChanged) {
+                        console.log('🎯 Attributes changed for entity:', entityId);
+                        console.log('🎯 Previous attributes:', currentState.attributes);
+                        console.log('🎯 New attributes:', freshState.attributes);
+                        
+                        // Update stored entity
+                        this.entities.set(entityId, freshState);
+                        
+                        // Emit attribute change event
+                        this.emit('attributes-changed', {
+                            entity_id: entityId,
+                            old_attributes: currentState.attributes,
+                            new_attributes: freshState.attributes,
+                            state: freshState
+                        });
+                        
+                        // Also emit as state change for compatibility
+                        this.emit('state-changed', { entity_id: entityId, state: freshState });
+                    }
+                } else {
+                    // First time seeing this entity
+                    this.entities.set(entityId, freshState);
+                    this.emit('state-changed', { entity_id: entityId, state: freshState });
+                }
+            }
+        } catch (error) {
+            console.error('Failed to refresh entity:', entityId, error);
+        }
+    }
+
+    // Check if attributes have changed between two attribute objects
+    haveAttributesChanged(oldAttributes, newAttributes) {
+        if (!oldAttributes && !newAttributes) return false;
+        if (!oldAttributes || !newAttributes) return true;
+        
+        // Get all keys from both objects
+        const allKeys = new Set([...Object.keys(oldAttributes), ...Object.keys(newAttributes)]);
+        
+        // Check each key for changes
+        for (const key of allKeys) {
+            const oldValue = oldAttributes[key];
+            const newValue = newAttributes[key];
+            
+            // Skip last_updated and last_changed as they always change
+            if (key === 'last_updated' || key === 'last_changed') continue;
+            
+            // Deep comparison for objects
+            if (typeof oldValue === 'object' && typeof newValue === 'object') {
+                if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+                    return true;
+                }
+            } else if (oldValue !== newValue) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
     // Called after successful authentication
     async onConnected() {
         try {
@@ -242,6 +379,9 @@ class HomeAssistantClient {
             
             // Subscribe to state changes
             await this.subscribeToEvents();
+            
+            // Polling disabled - relying on WebSocket events only
+            console.log('🔄 Attribute polling disabled - using WebSocket events only');
             
             // Emit connected event
             this.emit('connected');
@@ -276,12 +416,21 @@ class HomeAssistantClient {
     async subscribeToEvents() {
         try {
             console.log('🔄 Subscribing to ALL state change events (will filter client-side)...');
-            const result = await this.sendWithId({
+            const stateChangeResult = await this.sendWithId({
                 type: 'subscribe_events',
                 event_type: 'state_changed'
             });
             
-            console.log('✅ Subscribed to state change events, result:', result);
+            console.log('✅ Subscribed to state change events, result:', stateChangeResult);
+            
+            // Also subscribe to all events to catch attribute changes that don't trigger state changes
+            console.log('🔄 Subscribing to ALL events to catch attribute changes...');
+            const allEventsResult = await this.sendWithId({
+                type: 'subscribe_events'
+                // No event_type specified means subscribe to all events
+            });
+            
+            console.log('✅ Subscribed to all events, result:', allEventsResult);
             
         } catch (error) {
             console.error('❌ Failed to subscribe to events:', error);
@@ -291,6 +440,7 @@ class HomeAssistantClient {
 
     // Note: Home Assistant WebSocket API doesn't support subscribing to specific entities
     // We subscribe to all state_changed events and filter client-side for better performance
+    // We also subscribe to all events to catch attribute changes that don't trigger state changes
 
     // Call Home Assistant service
     async callService(domain, service, data = {}) {
@@ -362,10 +512,75 @@ class HomeAssistantClient {
         }
     }
 
+    // Start targeted polling for attribute changes
+    startAttributePolling() {
+        const gameScoreEntity = window.theaterWallConfig?.get('gameScore');
+        if (!gameScoreEntity) return;
+        
+        console.log('🔄 Starting targeted attribute polling for:', gameScoreEntity);
+        
+        // Store the current state for comparison
+        this.lastKnownAttributes = new Map();
+        
+        // Poll every 5 seconds for attribute changes (more frequent than general refresh)
+        this.attributePollingInterval = setInterval(async () => {
+            if (!this.isConnected) return;
+            
+            try {
+                await this.checkForAttributeChanges(gameScoreEntity);
+            } catch (error) {
+                console.error('Error during attribute polling:', error);
+            }
+        }, 5000);
+    }
+
+    // Check for attribute changes on a specific entity
+    async checkForAttributeChanges(entityId) {
+        try {
+            // Get current state from cache
+            const currentState = this.getEntityState(entityId);
+            
+            // Request fresh state from Home Assistant
+            const states = await this.sendWithId({
+                type: 'get_states'
+            });
+            
+            const freshState = states.find(state => state.entity_id === entityId);
+            
+            if (freshState && currentState) {
+                const attributesChanged = this.haveAttributesChanged(currentState.attributes, freshState.attributes);
+                
+                if (attributesChanged) {
+                    console.log('🎯 Attribute polling detected changes for:', entityId);
+                    console.log('🎯 Previous attributes:', currentState.attributes);
+                    console.log('🎯 New attributes:', freshState.attributes);
+                    
+                    // Update stored entity
+                    this.entities.set(entityId, freshState);
+                    
+                    // Emit attribute change event
+                    this.emit('attributes-changed', {
+                        entity_id: entityId,
+                        old_attributes: currentState.attributes,
+                        new_attributes: freshState.attributes,
+                        state: freshState
+                    });
+                    
+                    // Also emit as state change for compatibility
+                    this.emit('state-changed', { entity_id: entityId, state: freshState });
+                }
+            }
+        } catch (error) {
+            console.error('Failed to check for attribute changes:', error);
+        }
+    }
+
     // Disconnect from Home Assistant
     disconnect() {
         this.isConnected = false;
         this.stopHeartbeat();
+        
+        // Attribute polling disabled - no interval to clear
         
         if (this.ws) {
             this.ws.close();

@@ -4,7 +4,7 @@
 
 const http = require('http');
 
-function triggerCelebration(videoFile = 'assets/videos/ric-flair-celebration.mp4', options = {}) {
+function triggerCelebration(videoFile = 'assets/videos/ric-flair.mp4', options = {}) {
     const { autoHide = true, duration = 10000 } = options;
     
     const postData = JSON.stringify({
@@ -92,7 +92,7 @@ function main() {
     }
     
     // Parse arguments
-    let videoFile = 'assets/videos/ric-flair-celebration.mp4';
+    let videoFile = 'assets/videos/ric-flair.mp4';
     let autoHide = true;
     let duration = 10000;
     

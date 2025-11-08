@@ -1,14 +1,20 @@
 # Theater Wall Display - Docker Container
-FROM nginx:alpine
+FROM node:18-alpine
 
-# Copy static files to nginx serving directory
-COPY . /usr/share/nginx/html
+# Set working directory
+WORKDIR /app
 
-# Create nginx configuration for the theater wall
-COPY nginx.conf /etc/nginx/nginx.conf
+# Copy package files
+COPY package*.json ./
 
-# Expose port 80
-EXPOSE 80
+# Install dependencies
+RUN npm install --production
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Copy application files
+COPY . .
+
+# Expose port 8000 (default server port)
+EXPOSE 8000
+
+# Start the Node.js server
+CMD ["node", "server.js"]

@@ -10,7 +10,7 @@
     "start": "node server.js",
     "serve": "npm run build:env && python -m http.server 8080 --bind 0.0.0.0",
     "docker:build": "docker build -t theater-wall .",
-    "docker:run": "docker run -p 8080:80 theater-wall"
+    "docker:run": "docker run -p 8000:8000 theater-wall"
   },
   "keywords": [
     "home-assistant",

@@ -1211,26 +1211,60 @@ class PanelManager {
         `;
     }
 
+    // Format soccer last play data for better display
+    formatSoccerLastPlay(lastPlay) {
+        if (!lastPlay || lastPlay === 'N/A' || lastPlay.includes('Entity not found')) {
+            return '';
+        }
+
+        // Soccer data format: "45'+1' Yellow Card: Player (TEAM) 45'+2' Yellow Card: Player..."
+        // Split by time markers to get individual events
+        const events = lastPlay.split(/(?=\d+(?:\+\d+)?'\s+)/).filter(e => e.trim());
+
+        if (events.length === 0) {
+            return '';
+        }
+
+        let html = '';
+
+        // Parse and display all events
+        events.forEach(event => {
+            const trimmedEvent = event.trim();
+
+            // Parse format: "81' Yellow Card: Lamare Bogarde (AVL)"
+            // Stop capturing at the next timestamp or end of string
+            const eventMatch = trimmedEvent.match(/^(\d+(?:\+\d+)?')\s+([^:]+):\s*(.+?)(?=\s+\d+(?:\+\d+)?'|$)/);
+
+            if (eventMatch) {
+                const minute = eventMatch[1];
+                const eventType = eventMatch[2].trim();
+                const playerInfo = eventMatch[3].trim();
+
+                html += `<div class="stat-row soccer-event">
+                            <div class="stat-label">${eventType}</div>
+                            <div class="stat-value"><span class="event-time">${minute}</span> ${playerInfo}</div>
+                        </div>`;
+            }
+            // Skip events that don't match the expected format (like possession percentages)
+        });
+
+        return html;
+    }
+
     // Create soccer-specific stats
     createSoccerStats(gameData) {
         const attrs = gameData.attributes;
+        const formattedLastPlay = this.formatSoccerLastPlay(attrs.last_play);
+
         return `
             <div class="game-stats sport-soccer">
                 <div class="sport-header soccer-header">
-                    <div class="period-info">
-                        <div class="period">${attrs.quarter || 'N/A'}</div>
-                        <div class="clock">${attrs.clock || 'N/A'}</div>
-                    </div>
-                    <div class="possession">${attrs.possession || 'N/A'}</div>
+                    <div class="soccer-clock">${attrs.clock || 'N/A'}</div>
                 </div>
                 <div class="stats-grid">
                     <div class="stat-row shots">
                         <div class="stat-label">Shots on Target</div>
                         <div class="stat-value">${attrs.team_shots_on_target || '0'} - ${attrs.opponent_shots_on_target || '0'}</div>
-                    </div>
-                    <div class="stat-row last-play">
-                        <div class="stat-label">Last Play</div>
-                        <div class="stat-value">${attrs.last_play || 'N/A'}</div>
                     </div>
                     <div class="stat-row venue">
                         <div class="stat-label">Venue</div>
@@ -1240,6 +1274,10 @@ class PanelManager {
                         <div class="stat-label">TV Network</div>
                         <div class="stat-value">${attrs.tv_network || 'N/A'}</div>
                     </div>
+                </div>
+                ${formattedLastPlay ? '<div class="section-title">Match Events</div>' : ''}
+                <div class="soccer-events-container">
+                    ${formattedLastPlay}
                 </div>
             </div>
         `;

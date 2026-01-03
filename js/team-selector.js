@@ -35,45 +35,85 @@ class TeamSelector {
             }
         });
 
-        // Watch for file-based configuration changes
-        this.watchInterval = setInterval(() => {
-            this.checkExternalConfig();
-        }, 2000); // Check every 2 seconds
+        // Subscribe to Home Assistant entity changes for the selected entity input
+        this.subscribeToEntityChanges();
 
-        console.log('Team selector: Started watching for external changes');
+        console.log('Team selector: Started watching for Home Assistant entity changes');
     }
 
-    // Check for external configuration file changes
-    async checkExternalConfig() {
-        try {
-            // Try to fetch external team configuration
-            const response = await fetch('/api/current-team');
-            if (response.ok) {
-                const teamData = await response.json();
-                const configHash = JSON.stringify(teamData);
-                
-                if (configHash !== this.lastConfigHash) {
-                    this.lastConfigHash = configHash;
-                    console.log('Team selector: API response received:', teamData);
-                    this.handleExternalTeamChange(teamData);
-                }
+    // Subscribe to Home Assistant entity state changes
+    subscribeToEntityChanges() {
+        // Wait for Home Assistant client to be ready
+        const setupSubscription = () => {
+            const haClient = window.homeAssistantClient;
+            if (!haClient) {
+                console.log('Team selector: Home Assistant client not ready, retrying...');
+                setTimeout(setupSubscription, 1000);
+                return;
             }
-        } catch (error) {
-            // Try alternative endpoint
-            try {
-                const response = await fetch('/team-config.json');
-                if (response.ok) {
-                    const teamData = await response.json();
-                    const configHash = JSON.stringify(teamData);
-                    
-                    if (configHash !== this.lastConfigHash) {
-                        this.lastConfigHash = configHash;
-                        this.handleExternalTeamChange(teamData.team);
+
+            console.log('Team selector: Setting up subscription to input_text.theater_wall_selected_entity');
+
+            // Subscribe to state changes for the entity selector input
+            haClient.on('state-changed', (data) => {
+                if (data.entity_id === 'input_text.theater_wall_selected_entity') {
+                    const selectedEntityId = data.state?.state;
+                    console.log('Team selector: Selected entity changed via Home Assistant:', selectedEntityId);
+
+                    if (selectedEntityId) {
+                        // Create team data from the entity ID
+                        const teamData = {
+                            entity_id: selectedEntityId,
+                            name: this.formatEntityName(selectedEntityId)
+                        };
+                        this.handleExternalTeamChange(teamData);
                     }
                 }
-            } catch (fallbackError) {
-                // No external config available, that's ok
+            });
+
+            // Also listen for when Home Assistant connects/reconnects to load initial value
+            haClient.on('connected', async () => {
+                console.log('Team selector: Home Assistant connected, loading initial entity selection');
+                await this.loadInitialEntityFromHA();
+            });
+
+            // If already connected, load initial value now
+            if (haClient.isConnected) {
+                this.loadInitialEntityFromHA();
             }
+        };
+
+        setupSubscription();
+    }
+
+    // Load the initial entity selection from Home Assistant
+    async loadInitialEntityFromHA() {
+        try {
+            const haClient = window.homeAssistantClient;
+            if (!haClient || !haClient.isConnected) {
+                console.log('Team selector: Home Assistant not connected, skipping initial load');
+                return;
+            }
+
+            const entityState = haClient.getEntityState('input_text.theater_wall_selected_entity');
+            if (entityState && entityState.state) {
+                const selectedEntityId = entityState.state;
+                console.log('Team selector: Initial selected entity from Home Assistant:', selectedEntityId);
+
+                const teamData = {
+                    entity_id: selectedEntityId,
+                    name: this.formatEntityName(selectedEntityId)
+                };
+
+                // Only set if different from current
+                if (this.currentTeam?.entity_id !== selectedEntityId) {
+                    this.handleExternalTeamChange(teamData);
+                }
+            } else {
+                console.log('Team selector: No initial entity selection found in Home Assistant');
+            }
+        } catch (error) {
+            console.error('Team selector: Failed to load initial entity from Home Assistant:', error);
         }
     }
 
@@ -119,21 +159,24 @@ class TeamSelector {
         }
 
         const isDifferentTeam = this.currentTeam?.entity_id !== team.entity_id;
-        
+
         this.currentTeam = team;
-        
+
         // Update localStorage
         localStorage.setItem('theater-wall-selected-team', JSON.stringify(team));
-        
+
+        // Update Home Assistant entity to reflect the selection
+        this.updateHomeAssistantEntity(team.entity_id);
+
         // Update the global configuration to use the new entity
         if (this.config) {
             this.config.config.gameScore = team.entity_id;
-            
+
             // Update sensors array to include the team entity
             if (!this.config.config.entities.sensors.includes(team.entity_id)) {
                 this.config.config.entities.sensors = [team.entity_id];
             }
-            
+
             console.log('Team selector: Updated config gameScore to:', team.entity_id);
         }
         
@@ -392,6 +435,29 @@ class TeamSelector {
         setTimeout(() => {
             this.config.showNotification('Team data updated', 'success');
         }, 2000);
+    }
+
+    // Update Home Assistant entity with the selected entity ID
+    async updateHomeAssistantEntity(entityId) {
+        try {
+            const haClient = window.homeAssistantClient;
+            if (!haClient || !haClient.isConnected) {
+                console.log('Team selector: Home Assistant not connected, skipping entity update');
+                return;
+            }
+
+            console.log('Team selector: Updating Home Assistant input_text.theater_wall_selected_entity to:', entityId);
+
+            // Call the input_text.set_value service to update the entity
+            await haClient.callService('input_text', 'set_value', {
+                entity_id: 'input_text.theater_wall_selected_entity',
+                value: entityId
+            });
+
+            console.log('Team selector: Successfully updated Home Assistant entity');
+        } catch (error) {
+            console.error('Team selector: Failed to update Home Assistant entity:', error);
+        }
     }
 
     // Format entity name

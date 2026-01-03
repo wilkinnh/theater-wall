@@ -2,14 +2,12 @@
 
 // External script to change the team on the theater wall display
 // Usage: node scripts/change-team.js "Lakers" "sensor.lakers_score"
+// This script updates the Home Assistant input_text.theater_wall_selected_entity
 
 const http = require('http');
-const fs = require('fs');
-const path = require('path');
 
 // Configuration
 const THEATER_WALL_URL = 'http://localhost:8000';
-const TEAM_FILE = path.join(__dirname, '..', 'current-team.json');
 
 function setTeam(teamName, entityId) {
     const teamData = {
@@ -18,17 +16,12 @@ function setTeam(teamName, entityId) {
         timestamp: new Date().toISOString()
     };
 
-    // Method 1: Save to file (for file-based watching)
-    try {
-        fs.writeFileSync(TEAM_FILE, JSON.stringify(teamData, null, 2));
-        console.log(`✅ Team saved to file: ${teamName} (${entityId})`);
-    } catch (error) {
-        console.error(`❌ Failed to save to file: ${error.message}`);
-    }
+    console.log(`🔄 Setting team: ${teamName} (${entityId})`);
+    console.log(`🔄 This will update Home Assistant entity: input_text.theater_wall_selected_entity`);
 
-    // Method 2: HTTP request to API (if server is running)
+    // HTTP request to API - which will update Home Assistant
     const data = JSON.stringify(teamData);
-    
+
     const options = {
         hostname: 'localhost',
         port: 8000,
@@ -42,28 +35,34 @@ function setTeam(teamName, entityId) {
 
     const req = http.request(options, (res) => {
         let body = '';
-        
+
         res.on('data', (chunk) => {
             body += chunk;
         });
-        
+
         res.on('end', () => {
             try {
                 const response = JSON.parse(body);
                 if (response.success) {
-                    console.log(`✅ Team updated via API: ${teamName}`);
+                    console.log(`✅ Team updated via Home Assistant: ${teamName}`);
+                    console.log(`✅ Entity ID: ${entityId}`);
+                    if (response.ha_result) {
+                        console.log(`✅ Home Assistant response:`, response.ha_result);
+                    }
                 } else {
-                    console.log(`⚠️  API response: ${response.error || 'Unknown error'}`);
+                    console.log(`❌ API error: ${response.error || 'Unknown error'}`);
                 }
             } catch (error) {
                 console.log(`⚠️  API response parsing failed: ${error.message}`);
+                console.log(`Response body: ${body}`);
             }
         });
     });
 
     req.on('error', (error) => {
-        console.log(`⚠️  API request failed: ${error.message}`);
-        console.log(`ℹ️  Team saved to file - will be picked up by file watcher`);
+        console.log(`❌ API request failed: ${error.message}`);
+        console.log(`ℹ️  Make sure the server is running: npm start`);
+        console.log(`ℹ️  And Home Assistant connection is configured in .env`);
     });
 
     req.write(data);
@@ -71,17 +70,43 @@ function setTeam(teamName, entityId) {
 }
 
 function getCurrentTeam() {
-    try {
-        if (fs.existsSync(TEAM_FILE)) {
-            const teamData = JSON.parse(fs.readFileSync(TEAM_FILE, 'utf8'));
-            console.log(`Current team: ${teamData.name} (${teamData.entity_id})`);
-            console.log(`Last updated: ${teamData.timestamp}`);
-        } else {
-            console.log('No team currently set');
-        }
-    } catch (error) {
-        console.error(`Failed to read current team: ${error.message}`);
-    }
+    console.log(`🔄 Fetching current team from Home Assistant...`);
+
+    const options = {
+        hostname: 'localhost',
+        port: 8000,
+        path: '/api/current-team',
+        method: 'GET'
+    };
+
+    const req = http.request(options, (res) => {
+        let body = '';
+
+        res.on('data', (chunk) => {
+            body += chunk;
+        });
+
+        res.on('end', () => {
+            try {
+                const teamData = JSON.parse(body);
+                if (teamData.error) {
+                    console.log(`⚠️  ${teamData.error}`);
+                } else {
+                    console.log(`Current team: ${teamData.name} (${teamData.entity_id})`);
+                    console.log(`Last updated: ${teamData.timestamp}`);
+                }
+            } catch (error) {
+                console.error(`Failed to parse current team: ${error.message}`);
+            }
+        });
+    });
+
+    req.on('error', (error) => {
+        console.error(`Failed to get current team: ${error.message}`);
+        console.log(`ℹ️  Make sure the server is running: npm start`);
+    });
+
+    req.end();
 }
 
 function showUsage() {

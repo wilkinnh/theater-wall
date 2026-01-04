@@ -7,7 +7,9 @@ class TeamSelector {
         this.panels = null;
         this.watchInterval = null;
         this.lastConfigHash = null;
-        
+        this.pollingInterval = null;
+        this.lastEntityValue = null;
+
         this.init();
     }
 
@@ -38,7 +40,8 @@ class TeamSelector {
         // Subscribe to Home Assistant entity changes for the selected entity input
         this.subscribeToEntityChanges();
 
-        console.log('Team selector: Started watching for Home Assistant entity changes');
+        // Start polling as a fallback (since WebSocket events don't work for input_text entities)
+        this.startPolling();
     }
 
     // Subscribe to Home Assistant entity state changes
@@ -47,18 +50,14 @@ class TeamSelector {
         const setupSubscription = () => {
             const haClient = window.homeAssistantClient;
             if (!haClient) {
-                console.log('Team selector: Home Assistant client not ready, retrying...');
                 setTimeout(setupSubscription, 1000);
                 return;
             }
 
-            console.log('Team selector: Setting up subscription to input_text.theater_wall_selected_entity');
-
             // Subscribe to state changes for the entity selector input
-            haClient.on('state-changed', (data) => {
+            const stateChangedHandler = (data) => {
                 if (data.entity_id === 'input_text.theater_wall_selected_entity') {
                     const selectedEntityId = data.state?.state;
-                    console.log('Team selector: Selected entity changed via Home Assistant:', selectedEntityId);
 
                     if (selectedEntityId) {
                         // Create team data from the entity ID
@@ -69,11 +68,12 @@ class TeamSelector {
                         this.handleExternalTeamChange(teamData);
                     }
                 }
-            });
+            };
+
+            haClient.on('state-changed', stateChangedHandler);
 
             // Also listen for when Home Assistant connects/reconnects to load initial value
             haClient.on('connected', async () => {
-                console.log('Team selector: Home Assistant connected, loading initial entity selection');
                 await this.loadInitialEntityFromHA();
             });
 
@@ -86,31 +86,81 @@ class TeamSelector {
         setupSubscription();
     }
 
+    // Start polling the entity for changes (fallback since WebSocket events don't work for input_text)
+    startPolling() {
+        // Poll every 2 seconds
+        const pollInterval = 2000;
+
+        this.pollingInterval = setInterval(() => {
+            this.checkEntityForChanges();
+        }, pollInterval);
+
+        // Do an immediate check
+        this.checkEntityForChanges();
+    }
+
+    // Check if the entity value has changed
+    async checkEntityForChanges() {
+        try {
+            const haClient = window.homeAssistantClient;
+            if (!haClient || !haClient.isConnected) {
+                return;
+            }
+
+            // CRITICAL: Refresh states from Home Assistant to get the latest value
+            // The cached entity state is stale, so we need to fetch fresh data
+            await haClient.getStates();
+
+            const entityState = haClient.getEntityState('input_text.theater_wall_selected_entity');
+            if (!entityState) {
+                return;
+            }
+
+            const currentValue = entityState.state;
+
+            // Check if value has changed
+            if (this.lastEntityValue !== null && this.lastEntityValue !== currentValue) {
+                // Create team data from the entity ID
+                const teamData = {
+                    entity_id: currentValue,
+                    name: this.formatEntityName(currentValue)
+                };
+
+                this.handleExternalTeamChange(teamData);
+            }
+
+            // Update last known value
+            this.lastEntityValue = currentValue;
+
+        } catch (error) {
+            console.error('🔄 Polling error:', error);
+        }
+    }
+
     // Load the initial entity selection from Home Assistant
     async loadInitialEntityFromHA() {
         try {
             const haClient = window.homeAssistantClient;
             if (!haClient || !haClient.isConnected) {
-                console.log('Team selector: Home Assistant not connected, skipping initial load');
                 return;
             }
 
             const entityState = haClient.getEntityState('input_text.theater_wall_selected_entity');
             if (entityState && entityState.state) {
                 const selectedEntityId = entityState.state;
-                console.log('Team selector: Initial selected entity from Home Assistant:', selectedEntityId);
 
                 const teamData = {
                     entity_id: selectedEntityId,
                     name: this.formatEntityName(selectedEntityId)
                 };
 
+                // Set the initial value for polling comparison
+                this.lastEntityValue = selectedEntityId;
+
                 // Only set if different from current
                 if (this.currentTeam?.entity_id !== selectedEntityId) {
                     this.handleExternalTeamChange(teamData);
                 }
-            } else {
-                console.log('Team selector: No initial entity selection found in Home Assistant');
             }
         } catch (error) {
             console.error('Team selector: Failed to load initial entity from Home Assistant:', error);
@@ -121,9 +171,6 @@ class TeamSelector {
     handleExternalTeamChange(teamData) {
         if (!teamData) return;
 
-        console.log('Team selector: External team change detected', teamData);
-        console.log('Team selector: Current team:', this.currentTeam);
-        
         let newTeam;
         if (typeof teamData === 'string') {
             newTeam = { entity_id: teamData, name: this.formatEntityName(teamData) };
@@ -134,27 +181,21 @@ class TeamSelector {
             // Fallback for nested format
             newTeam = teamData.team;
         } else {
-            console.warn('Team selector: Unknown team data format', teamData);
             return;
         }
 
         // Always update if it's an external change, even if entity_id matches
         // This ensures data is refreshed properly
         const isDifferentTeam = this.currentTeam?.entity_id !== newTeam.entity_id;
-        const isExternalChange = true; // This method is only called for external changes
-        
-        if (isDifferentTeam || isExternalChange) {
-            console.log('Team selector: Setting new team (different:', isDifferentTeam, ', external:', isExternalChange, ')', newTeam);
+
+        if (isDifferentTeam) {
             this.setTeam(newTeam, true); // Force update
-        } else {
-            console.log('Team selector: Team unchanged, skipping update');
         }
     }
 
     // Set the current team
     setTeam(team, forceUpdate = false) {
         if (!team || !team.entity_id) {
-            console.warn('Team selector: Invalid team data', team);
             return;
         }
 
@@ -176,51 +217,42 @@ class TeamSelector {
             if (!this.config.config.entities.sensors.includes(team.entity_id)) {
                 this.config.config.entities.sensors = [team.entity_id];
             }
-
-            console.log('Team selector: Updated config gameScore to:', team.entity_id);
         }
-        
+
         // Always update display and reload entities for external changes
         if (forceUpdate || isDifferentTeam) {
-            console.log('Team selector: Updating display and reloading entities (force:', forceUpdate, ', different:', isDifferentTeam, ')');
-            
-            // Update display
-            this.updateTeamDisplay();
-            
-            // Force refresh Home Assistant data and reload entities
-            if (this.panels) {
-                console.log('Team selector: Force refreshing Home Assistant data and reloading entities');
-                
-                // Clear all panels first
-                this.panels.clearAllPanels();
-                
-                // If connected to Home Assistant, refresh states
-                if (this.panels.homeAssistant && this.panels.homeAssistant.isConnected) {
-                    console.log('Team selector: Refreshing Home Assistant states');
-                    this.panels.homeAssistant.getStates().then(states => {
-                        console.log('Team selector: States refreshed, reloading entities');
-                        this.panels.loadEntities();
-                        
-                        // Set up a retry mechanism to ensure the team data loads
-                        this.scheduleTeamDataRetry();
-                    }).catch(error => {
-                        console.error('Team selector: Failed to refresh states:', error);
-                        // Fallback to loading entities anyway
-                        this.panels.loadEntities();
-                        this.scheduleTeamDataRetry();
-                    });
+            // CRITICAL: Fetch the actual game data for the new entity
+            if (this.panels && this.panels.homeAssistant && this.panels.homeAssistant.isConnected) {
+                // Get the current state of the new game entity
+                const gameState = this.panels.homeAssistant.getEntityState(team.entity_id);
+
+                if (gameState) {
+                    // Immediately display the game data
+                    this.panels.displayGameScore(gameState);
                 } else {
-                    console.log('Team selector: Home Assistant not connected, loading entities directly');
-                    this.panels.loadEntities();
-                    this.scheduleTeamDataRetry();
+                    // Fetch fresh states to get the new entity
+                    this.panels.homeAssistant.getStates().then(states => {
+                        const freshGameState = this.panels.homeAssistant.getEntityState(team.entity_id);
+
+                        if (freshGameState) {
+                            this.panels.displayGameScore(freshGameState);
+                        } else {
+                            // Display with sample data
+                            this.panels.loadGameScore(team.entity_id);
+                        }
+                    }).catch(error => {
+                        this.panels.loadGameScore(team.entity_id);
+                    });
+                }
+            } else {
+                if (this.panels) {
+                    this.panels.loadGameScore(team.entity_id);
                 }
             }
         }
-        
+
         // Show notification
         this.showTeamNotification(team);
-        
-        console.log('Team selector: Team set to', team, '(force:', forceUpdate, ')');
     }
 
     // Schedule a retry to ensure team data loads properly
@@ -229,20 +261,15 @@ class TeamSelector {
         if (this.retryTimer) {
             clearTimeout(this.retryTimer);
         }
-        
+
         // Schedule retry in 2 seconds
         this.retryTimer = setTimeout(() => {
-            console.log('Team selector: Checking if team data loaded properly...');
-            
             // Check if the team entity is displayed
             const teamElement = document.querySelector(`[id*="${this.currentTeam.entity_id.replace(/\./g, '-')}"]`);
             if (!teamElement) {
-                console.log('Team selector: Team element not found, retrying entity load...');
                 if (this.panels) {
                     this.panels.loadEntities();
                 }
-            } else {
-                console.log('Team selector: Team element found, data loaded successfully');
             }
         }, 2000);
     }
@@ -250,11 +277,8 @@ class TeamSelector {
     // Update the display with current team data
     updateTeamDisplay() {
         if (!this.currentTeam || !this.panels) {
-            console.warn('Team selector: Cannot update display - missing team or panels');
             return;
         }
-
-        console.log('Team selector: Updating display for team:', this.currentTeam);
 
         // Clear all panels first
         this.panels.clearAllPanels();
@@ -264,13 +288,11 @@ class TeamSelector {
         if (this.panels.homeAssistant) {
             entityState = this.panels.homeAssistant.getEntityState(this.currentTeam.entity_id);
         }
-        
+
         if (entityState) {
-            console.log('Team selector: Found entity state, displaying team data');
             // Display team in center panel
             this.panels.createEntityElement('controls', this.currentTeam.entity_id, entityState);
         } else {
-            console.log('Team selector: No entity state found, creating placeholder');
             // Create placeholder for team
             const teamElement = document.createElement('div');
             teamElement.className = 'entity-card team-card';
@@ -283,7 +305,7 @@ class TeamSelector {
                     <span class="entity-state">Loading team data...</span>
                 </div>
             `;
-            
+
             const controlsContainer = document.getElementById('controls-container');
             if (controlsContainer) {
                 controlsContainer.appendChild(teamElement);
@@ -292,7 +314,6 @@ class TeamSelector {
 
         // Subscribe to entity updates if connected to Home Assistant
         if (this.panels.homeAssistant && this.panels.homeAssistant.isConnected) {
-            console.log('Team selector: Subscribing to entity updates for:', this.currentTeam.entity_id);
             try {
                 this.panels.homeAssistant.send({
                     type: 'subscribe_entities',
@@ -301,8 +322,6 @@ class TeamSelector {
             } catch (error) {
                 console.error('Team selector: Failed to subscribe to entity updates:', error);
             }
-        } else {
-            console.log('Team selector: Home Assistant not connected, skipping subscription');
         }
     }
 
@@ -442,19 +461,14 @@ class TeamSelector {
         try {
             const haClient = window.homeAssistantClient;
             if (!haClient || !haClient.isConnected) {
-                console.log('Team selector: Home Assistant not connected, skipping entity update');
                 return;
             }
-
-            console.log('Team selector: Updating Home Assistant input_text.theater_wall_selected_entity to:', entityId);
 
             // Call the input_text.set_value service to update the entity
             await haClient.callService('input_text', 'set_value', {
                 entity_id: 'input_text.theater_wall_selected_entity',
                 value: entityId
             });
-
-            console.log('Team selector: Successfully updated Home Assistant entity');
         } catch (error) {
             console.error('Team selector: Failed to update Home Assistant entity:', error);
         }
@@ -485,6 +499,9 @@ class TeamSelector {
         }
         if (this.retryTimer) {
             clearTimeout(this.retryTimer);
+        }
+        if (this.pollingInterval) {
+            clearInterval(this.pollingInterval);
         }
     }
 }

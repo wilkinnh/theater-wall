@@ -221,23 +221,15 @@ class PanelManager {
 
     // Display game score in panels
     displayGameScore(gameData) {
-        console.log('🎮 displayGameScore called with:', gameData);
         const attrs = gameData.attributes;
-
-        console.log('🎮 Game data attributes:', attrs);
-        console.log('🎮 ALWAYS updating 3-panel display');
 
         // Determine team positioning based on sport and home/away status
         const teamPositioning = this.getTeamPositioning(attrs);
 
-        console.log('🎮 Team positioning:', teamPositioning);
-
         // ALWAYS update the 3-panel display (this is what users see)
         // Left panel
         const leftContainer = this.containers.sensors;
-        console.log('🎮 Left container:', leftContainer);
         if (leftContainer) {
-            console.log('🎮 Updating left panel with', teamPositioning.left.label, 'data');
             leftContainer.innerHTML = `
                 <div class="game-score-display team-${teamPositioning.left.abbr.toLowerCase()}">
                     ${teamPositioning.left.logo ? `
@@ -255,17 +247,13 @@ class PanelManager {
 
         // Center panel - Sport-specific game stats
         const centerContainer = this.containers.controls;
-        console.log('🎮 Center container:', centerContainer);
         if (centerContainer) {
-            console.log('🎮 Updating center panel with', attrs.sport, 'game stats');
             centerContainer.innerHTML = this.createSportSpecificStats(gameData);
         }
 
         // Right panel
         const rightContainer = this.containers.media;
-        console.log('🎮 Right container:', rightContainer);
         if (rightContainer) {
-            console.log('🎮 Updating right panel with', teamPositioning.right.label, 'data');
             rightContainer.innerHTML = `
                 <div class="game-score-display team-${teamPositioning.right.abbr.toLowerCase()}">
                     ${teamPositioning.right.logo ? `
@@ -280,22 +268,12 @@ class PanelManager {
                 </div>
             `;
         }
-
-        console.log('🎮 displayGameScore completed - 3-panel display updated');
     }
 
     // Determine team positioning based on sport type and home/away status
     getTeamPositioning(attrs) {
         const sport = attrs.sport?.toLowerCase();
         const teamHomeAway = attrs.team_homeaway; // 'home' or 'away'
-        const opponentHomeAway = attrs.opponent_homeaway; // 'home' or 'away'
-
-        console.log('🎮 Team positioning logic:', {
-            sport,
-            teamHomeAway,
-            opponentHomeAway,
-            teamIsHome: teamHomeAway === 'home'
-        });
 
         // Determine if soccer or American sport
         const isSoccer = sport === 'soccer' || sport === 'football' && attrs.league?.toLowerCase() !== 'nfl';
@@ -379,11 +357,9 @@ class PanelManager {
 
     // Create sample game data for testing
     createSampleGameData(entityId = 'sensor.atlanta_falcons') {
-        console.log('🎮 Creating sample data for entity:', entityId);
-        
         // Extract team name from entity ID
         const teamName = entityId.replace('sensor.', '').replace(/_/g, ' ');
-        
+
         return {
             entity_id: entityId,
             state: 'active',

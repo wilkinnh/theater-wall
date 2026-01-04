@@ -13,19 +13,16 @@ class CelebrationTrigger {
 
     // Initialize the celebration trigger system
     init() {
-        console.log('🎬 Initializing celebration trigger system');
         this.startPolling();
     }
 
     // Start polling for celebration triggers
     startPolling() {
         if (this.isActive) {
-            console.log('🎬 Celebration trigger polling already active');
             return;
         }
 
         this.isActive = true;
-        console.log(`🎬 Starting celebration trigger polling (every ${this.pollingFrequency}ms)`);
         
         this.pollingInterval = setInterval(() => {
             this.checkForTrigger();
@@ -39,7 +36,6 @@ class CelebrationTrigger {
             this.pollingInterval = null;
         }
         this.isActive = false;
-        console.log('🎬 Stopped celebration trigger polling');
     }
 
     // Check for celebration trigger
@@ -54,11 +50,9 @@ class CelebrationTrigger {
                 
                 // Check cooldown to prevent duplicate triggers
                 if (now - this.lastTriggerTime < this.cooldownPeriod) {
-                    console.log(`🎬 Celebration trigger ignored due to cooldown (${now - this.lastTriggerTime}ms < ${this.cooldownPeriod}ms)`);
                     return;
                 }
                 
-                console.log('🎬 Celebration trigger detected!', data);
                 this.lastTriggerTime = now;
                 
                 // Trigger the celebration
@@ -74,8 +68,6 @@ class CelebrationTrigger {
     async triggerCelebration(data) {
         const { videoFile, autoHide = true, duration = 10000 } = data;
         
-        console.log(`🎬 Triggering celebration video: ${videoFile}`);
-        console.log(`🎬 Options: autoHide=${autoHide}, duration=${duration}`);
         
         try {
             // Get the video player instance
@@ -94,7 +86,6 @@ class CelebrationTrigger {
             // Set up auto-hide if enabled
             if (autoHide) {
                 setTimeout(() => {
-                    console.log('🎬 Auto-hiding celebration video');
                     videoPlayer.hideVideo();
                 }, duration);
             }
@@ -104,7 +95,6 @@ class CelebrationTrigger {
                 window.theaterWallConfig.showNotification('🎉 GOAL CELEBRATION!', 'success', 3000);
             }
             
-            console.log('✅ Celebration video triggered successfully');
             
         } catch (error) {
             console.error('🎬 Failed to trigger celebration video:', error);
@@ -121,7 +111,6 @@ class CelebrationTrigger {
             timestamp: new Date().toISOString()
         };
         
-        console.log('🎬 Manual celebration trigger:', triggerData);
         this.triggerCelebration(triggerData);
     }
 
@@ -139,7 +128,6 @@ class CelebrationTrigger {
     // Cleanup
     destroy() {
         this.stopPolling();
-        console.log('🎬 Celebration trigger system destroyed');
     }
 }
 
@@ -152,11 +140,6 @@ window.triggerCelebration = (videoFile) => {
 };
 
 window.getCelebrationStatus = () => {
-    console.log('🎬 Celebration trigger status:', window.celebrationTrigger.getStatus());
     return window.celebrationTrigger.getStatus();
 };
 
-console.log('🎬 Celebration trigger system loaded');
-console.log('🎬 Global commands available:');
-console.log('  triggerCelebration(videoFile) - Manually trigger celebration');
-console.log('  getCelebrationStatus() - Get system status');

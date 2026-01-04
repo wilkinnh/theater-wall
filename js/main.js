@@ -19,18 +19,12 @@ class TheaterWallApp {
         const urlParams = new URLSearchParams(window.location.search);
         const showHUD = urlParams.get('showHUD');
         const result = showHUD === 'true';
-        console.log(`🎬 HUD Parameter Check:`);
-        console.log(`  - Full URL: ${window.location.href}`);
-        console.log(`  - Query string: ${window.location.search}`);
-        console.log(`  - showHUD parameter: "${showHUD}"`);
-        console.log(`  - Parsed result: ${result}`);
         return result;
     }
 
     // Initialize the application
     async init() {
         try {
-            console.log('Initializing Theater Wall Display...');
             
             // Wait for DOM to be ready
             if (document.readyState === 'loading') {
@@ -66,12 +60,9 @@ class TheaterWallApp {
             // Re-apply HUD visibility after all components are initialized
             // This ensures video controls and other dynamic elements are properly hidden
             setTimeout(() => {
-                console.log('🎬 Re-applying HUD visibility after initialization...');
                 this.toggleHUDVisibility();
             }, 100);
             
-            console.log(`Theater Wall Display initialized in ${Date.now() - this.startTime}ms`);
-            console.log(`HUD Mode: ${this.showHUD ? 'ENABLED' : 'HIDDEN (add ?showHUD=true to URL)'}`);
             
         } catch (error) {
             console.error('Failed to start application:', error);
@@ -96,16 +87,13 @@ class TheaterWallApp {
         // Validate configuration (environment-driven - no notifications)
         const errors = this.config.validateConfig();
         if (errors.length > 0) {
-            console.warn('Configuration issues:', errors);
         }
     }
 
     // Toggle HUD visibility based on URL parameter
     toggleHUDVisibility() {
-        console.log(`🎬 toggleHUDVisibility called with showHUD = ${this.showHUD}`);
         
         if (!this.showHUD) {
-            console.log('🎬 HIDING HUD - Starting to hide elements...');
             
             // Hide all HUD elements
             const hudElements = [
@@ -119,19 +107,15 @@ class TheaterWallApp {
                 const element = document.querySelector(selector);
                 if (element) {
                     element.style.display = 'none';
-                    console.log(`🎬 ✅ Hidden HUD element: ${selector}`);
                 } else {
-                    console.log(`🎬 ⚠️  Element not found: ${selector}`);
                 }
             });
             
             // Check if video controls exist and hide them
             const videoControls = document.querySelector('.video-controls');
             if (videoControls) {
-                console.log('🎬 Found video controls, hiding them...');
                 videoControls.style.display = 'none';
             } else {
-                console.log('🎬 Video controls not found (may not be created yet)');
             }
             
             // Hide video controls during playback with CSS
@@ -158,17 +142,13 @@ class TheaterWallApp {
                 }
             `;
             document.head.appendChild(style);
-            console.log('🎬 ✅ Added HUD hide styles to document');
             
-            console.log('🎬 HUD Mode: HIDDEN - All controls and status hidden');
         } else {
-            console.log('🎬 HUD Mode: VISIBLE - All controls and status shown');
             
             // Remove any existing hide styles
             const existingStyle = document.getElementById('hud-hide-style');
             if (existingStyle) {
                 existingStyle.remove();
-                console.log('🎬 Removed HUD hide styles');
             }
         }
     }
@@ -222,13 +202,10 @@ class TheaterWallApp {
         if (haConfig.url && haConfig.token) {
             try {
                 await this.homeAssistant.connect();
-                console.log('Connected to Home Assistant');
             } catch (error) {
-                console.warn('Failed to connect to Home Assistant:', error);
                 this.config.showNotification('Failed to connect to Home Assistant. Using sample data.', 'warning');
             }
         } else {
-            console.log('Home Assistant not configured, using sample data');
         }
     }
 
@@ -240,12 +217,10 @@ class TheaterWallApp {
         }
         
         // Reduce update frequency when hidden
-        console.log('App hidden, reducing activity');
     }
 
     // Handle app visible (tab active)
     onAppVisible() {
-        console.log('App visible, resuming normal activity');
         
         // Refresh data if needed
         if (this.homeAssistant && this.homeAssistant.isConnected) {
@@ -266,7 +241,6 @@ class TheaterWallApp {
 
     // Handle network online
     onNetworkOnline() {
-        console.log('Network connection restored');
         this.config.showNotification('Network connection restored', 'success');
         
         // Try to reconnect to Home Assistant
@@ -277,14 +251,12 @@ class TheaterWallApp {
 
     // Handle network offline
     onNetworkOffline() {
-        console.log('Network connection lost');
         this.config.showNotification('Network connection lost', 'error');
     }
 
     // Handle before unload
     onBeforeUnload() {
         // Save any pending state
-        console.log('Application unloading');
     }
 
     // Setup keyboard shortcuts
@@ -321,7 +293,6 @@ class TheaterWallApp {
 
     // Reload application
     reloadApplication() {
-        console.log('Reloading application...');
         window.location.reload();
     }
 
@@ -350,10 +321,8 @@ class TheaterWallApp {
                     this.videoPlayer.setState(state.videoState);
                 }
                 
-                console.log('State restored from', new Date(state.timestamp));
             }
         } catch (error) {
-            console.warn('Failed to load saved state:', error);
         }
     }
 
@@ -431,40 +400,29 @@ class TheaterWallApp {
 
     // Debug refresh game score
     debugRefreshGameScore() {
-        console.log('🔄 Manual game score refresh triggered');
         
         const gameScoreEntity = this.config.get('gameScore');
-        console.log('Refreshing entity:', gameScoreEntity);
         
         if (this.homeAssistant && this.homeAssistant.isConnected) {
             // Get fresh states from Home Assistant
             this.homeAssistant.getStates().then(states => {
-                console.log('States refreshed:', states.length, 'entities');
                 
                 const gameScoreState = states.find(s => s.entity_id === gameScoreEntity);
                 if (gameScoreState) {
-                    console.log('Game score state after refresh:', {
-                        teamScore: gameScoreState.attributes?.team_score,
-                        opponentScore: gameScoreState.attributes?.opponent_score,
-                        quarter: gameScoreState.attributes?.quarter,
-                        clock: gameScoreState.attributes?.clock,
-                        lastUpdate: gameScoreState.attributes?.last_update,
-                        lastChanged: gameScoreState.last_changed
-                    });
-                    
+
+
+
                     // Update the 3-panel display directly
                     this.panels.displayGameScore(gameScoreState);
                     
                     // Also update the hidden entity element for real-time updates
                     this.panels.updateEntity(gameScoreEntity, gameScoreState);
                 } else {
-                    console.log('Game score entity not found after refresh');
                 }
             }).catch(error => {
                 console.error('Failed to refresh states:', error);
             });
         } else {
-            console.log('Home Assistant not connected');
         }
     }
 
@@ -535,10 +493,8 @@ if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js')
             .then(registration => {
-                console.log('SW registered: ', registration);
             })
             .catch(registrationError => {
-                console.log('SW registration failed: ', registrationError);
             });
     });
 }

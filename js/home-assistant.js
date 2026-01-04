@@ -38,7 +38,6 @@ class HomeAssistantClient {
     // Connect to Home Assistant WebSocket
     async connect() {
         if (!this.config.url || !this.config.token) {
-            console.warn('Home Assistant configuration incomplete');
             this.updateConnectionStatus('disconnected', 'Configuration incomplete');
             return;
         }
@@ -64,7 +63,6 @@ class HomeAssistantClient {
 
     // Handle WebSocket connection open
     handleOpen() {
-        console.log('Connected to Home Assistant WebSocket');
         this.isConnected = true;
         this.reconnectAttempts = 0;
         
@@ -83,11 +81,9 @@ class HomeAssistantClient {
             switch (message.type) {
                 case 'auth_required':
                     // Authentication required - this shouldn't happen with our flow
-                    console.warn('Authentication required unexpectedly');
                     break;
                     
                 case 'auth_ok':
-                    console.log('Authentication successful');
                     this.updateConnectionStatus('connected', 'Connected to Home Assistant');
                     this.onConnected();
                     break;
@@ -107,7 +103,7 @@ class HomeAssistantClient {
                     break;
                     
                 default:
-                    console.log('Unknown message type:', message.type);
+                    break;
             }
         } catch (error) {
             console.error('Failed to parse WebSocket message:', error);
@@ -116,7 +112,6 @@ class HomeAssistantClient {
 
     // Handle WebSocket connection close
     handleClose(event) {
-        console.log('WebSocket connection closed:', event.code, event.reason);
         this.isConnected = false;
         this.stopHeartbeat();
         this.updateConnectionStatus('disconnected', 'Disconnected');
@@ -146,7 +141,6 @@ class HomeAssistantClient {
         if (this.ws && this.ws.readyState === WebSocket.OPEN) {
             this.ws.send(JSON.stringify(message));
         } else {
-            console.warn('WebSocket not connected, cannot send message:', message);
         }
     }
 
@@ -175,14 +169,12 @@ class HomeAssistantClient {
     handleResult(message) {
         const { id, success, result, error } = message;
         
-        console.log('🔄 HA Result message:', { id, success, result, error });
         
         if (this.subscriptions.has(id)) {
             const { resolve, reject } = this.subscriptions.get(id);
             this.subscriptions.delete(id);
             
             if (success) {
-                console.log('✅ HA Request successful for ID:', id);
                 resolve(result);
             } else {
                 console.error('❌ HA Request failed for ID:', id, 'Error:', error);
@@ -202,12 +194,9 @@ class HomeAssistantClient {
             const entityId = event.data?.entity_id;
             
             if (entityId === gameScoreEntity) {
-                console.log('🎯 TARGET ENTITY WebSocket event received:', event.type, entityId);
-                console.log('🎯 Full event data:', event.data);
             } else {
                 // Log a few sample events to confirm WebSocket is working
                 if (Math.random() < 0.01) { // Only log 1% of other events to reduce noise
-                    console.log('🔄 Sample WebSocket event (not target):', event.type, entityId);
                 }
             }
             
@@ -243,7 +232,6 @@ class HomeAssistantClient {
         
         // Check if this service call might affect our game score entity
         if (event.data && event.data.service_data && event.data.service_data.entity_id === gameScoreEntity) {
-            console.log('🎯 Service call event for target entity:', event.type, event.data);
             
             // Schedule a refresh of the entity to catch attribute changes
             setTimeout(() => {
@@ -258,7 +246,6 @@ class HomeAssistantClient {
         
         // Check if this automation might affect our game score entity
         if (event.data && event.data.entity_id === gameScoreEntity) {
-            console.log('🎯 Automation triggered for target entity:', event.type, event.data);
             
             // Schedule a refresh of the entity to catch attribute changes
             setTimeout(() => {
@@ -277,7 +264,6 @@ class HomeAssistantClient {
             (event.data.old_state && event.data.old_state.entity_id === gameScoreEntity) ||
             (event.data.new_state && event.data.new_state.entity_id === gameScoreEntity)
         )) {
-            console.log('🎯 Generic event for target entity:', event.type, event.data);
             
             // Handle like a state change event
             if (event.data.new_state) {
@@ -289,7 +275,6 @@ class HomeAssistantClient {
     // Refresh a specific entity to get current state and attributes
     async refreshEntity(entityId) {
         try {
-            console.log('🔄 Refreshing entity to check for attribute changes:', entityId);
             
             // Get current state
             const currentState = this.getEntityState(entityId);
@@ -307,9 +292,6 @@ class HomeAssistantClient {
                     const attributesChanged = this.haveAttributesChanged(currentState.attributes, freshState.attributes);
                     
                     if (attributesChanged) {
-                        console.log('🎯 Attributes changed for entity:', entityId);
-                        console.log('🎯 Previous attributes:', currentState.attributes);
-                        console.log('🎯 New attributes:', freshState.attributes);
                         
                         // Update stored entity
                         this.entities.set(entityId, freshState);
@@ -375,7 +357,6 @@ class HomeAssistantClient {
             await this.subscribeToEvents();
             
             // Polling disabled - relying on WebSocket events only
-            console.log('🔄 Attribute polling disabled - using WebSocket events only');
             
             // Emit connected event
             this.emit('connected');
@@ -409,22 +390,18 @@ class HomeAssistantClient {
     // Subscribe to state change events
     async subscribeToEvents() {
         try {
-            console.log('🔄 Subscribing to ALL state change events (will filter client-side)...');
             const stateChangeResult = await this.sendWithId({
                 type: 'subscribe_events',
                 event_type: 'state_changed'
             });
             
-            console.log('✅ Subscribed to state change events, result:', stateChangeResult);
             
             // Also subscribe to all events to catch attribute changes that don't trigger state changes
-            console.log('🔄 Subscribing to ALL events to catch attribute changes...');
             const allEventsResult = await this.sendWithId({
                 type: 'subscribe_events'
                 // No event_type specified means subscribe to all events
             });
             
-            console.log('✅ Subscribed to all events, result:', allEventsResult);
             
         } catch (error) {
             console.error('❌ Failed to subscribe to events:', error);
@@ -446,7 +423,6 @@ class HomeAssistantClient {
                 service_data: data
             });
             
-            console.log(`Service ${domain}.${service} called successfully`);
             return result;
             
         } catch (error) {
@@ -494,7 +470,6 @@ class HomeAssistantClient {
             this.reconnectAttempts++;
             const delay = this.reconnectDelay * this.reconnectAttempts;
             
-            console.log(`Scheduling reconnect attempt ${this.reconnectAttempts} in ${delay}ms`);
             
             setTimeout(() => {
                 this.updateConnectionStatus('connecting', `Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
@@ -511,7 +486,6 @@ class HomeAssistantClient {
         const gameScoreEntity = window.theaterWallConfig?.get('gameScore');
         if (!gameScoreEntity) return;
         
-        console.log('🔄 Starting targeted attribute polling for:', gameScoreEntity);
         
         // Store the current state for comparison
         this.lastKnownAttributes = new Map();
@@ -545,9 +519,6 @@ class HomeAssistantClient {
                 const attributesChanged = this.haveAttributesChanged(currentState.attributes, freshState.attributes);
                 
                 if (attributesChanged) {
-                    console.log('🎯 Attribute polling detected changes for:', entityId);
-                    console.log('🎯 Previous attributes:', currentState.attributes);
-                    console.log('🎯 New attributes:', freshState.attributes);
                     
                     // Update stored entity
                     this.entities.set(entityId, freshState);

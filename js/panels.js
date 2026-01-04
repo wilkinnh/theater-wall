@@ -34,39 +34,22 @@ class PanelManager {
     setupEventListeners() {
         // Listen for Home Assistant events
         this.homeAssistant.on('connected', () => {
-            console.log('PanelManager: HA connected, loading entities');
             this.loadEntities();
             // Start periodic refresh for attribute-based updates
             this.startPeriodicRefresh();
         });
         
         this.homeAssistant.on('states-loaded', (states) => {
-            console.log('PanelManager: States loaded:', states.length, 'entities');
             
             // Check if our game score entity exists
             const gameScoreEntity = this.config.get('gameScore');
             const gameScoreState = states.find(s => s.entity_id === gameScoreEntity);
-            console.log('Game score entity check:', {
-                entityId: gameScoreEntity,
-                found: !!gameScoreState,
-                state: gameScoreState
-            });
-            
+
             // Log the current game data
             if (gameScoreState) {
-                console.log('Current game data:', {
-                    teamScore: gameScoreState.attributes?.team_score,
-                    opponentScore: gameScoreState.attributes?.opponent_score,
-                    quarter: gameScoreState.attributes?.quarter,
-                    clock: gameScoreState.attributes?.clock,
-                    lastUpdate: gameScoreState.attributes?.last_update
-                });
-                
                 // 🔄 RELOAD GAME SCORE when states are loaded
-                console.log('🔄 States loaded - reloading game score for:', gameScoreEntity);
                 this.loadGameScore(gameScoreEntity);
             } else {
-                console.log('🔄 Game score entity not found in states, using sample data');
                 this.loadGameScore(gameScoreEntity);
             }
             
@@ -76,7 +59,6 @@ class PanelManager {
         this.homeAssistant.on('state-changed', (data) => {
             // Only log game score state changes
             if (data.entity_id === this.config.get('gameScore')) {
-                console.log('PanelManager: Game score update received:', data);
             }
             this.updateEntity(data.entity_id, data.state);
         });
@@ -85,11 +67,6 @@ class PanelManager {
         this.homeAssistant.on('attributes-changed', (data) => {
             // Only log game score attribute changes
             if (data.entity_id === this.config.get('gameScore')) {
-                console.log('PanelManager: Game score ATTRIBUTE update received:', data);
-                console.log('PanelManager: Changed attributes:', {
-                    old: data.old_attributes,
-                    new: data.new_attributes
-                });
             }
             this.updateEntity(data.entity_id, data.state);
         });
@@ -105,7 +82,6 @@ class PanelManager {
         const gameScoreEntity = this.config.get('gameScore');
         if (!gameScoreEntity) return;
 
-        console.log('🔄 Starting periodic refresh for attribute-based updates');
         
         // Refresh every 30 seconds
         this.refreshInterval = setInterval(() => {
@@ -118,26 +94,16 @@ class PanelManager {
         if (!this.homeAssistant.isConnected) return;
 
         try {
-            console.log('🔄 Refreshing game score entity:', entityId);
-            
+
             // Get fresh state from Home Assistant API (not cache)
             const freshStates = await this.homeAssistant.sendWithId({
                 type: 'get_states'
             });
-            
+
             // Find our entity in the fresh data
             const freshState = freshStates.find(state => state.entity_id === entityId);
-            
+
             if (freshState) {
-                console.log('🔄 ✅ Fresh data received:', {
-                    teamScore: freshState.attributes?.team_score,
-                    opponentScore: freshState.attributes?.opponent_score,
-                    quarter: freshState.attributes?.quarter,
-                    clock: freshState.attributes?.clock,
-                    lastUpdate: freshState.attributes?.last_update,
-                    lastChanged: freshState.last_changed
-                });
-                
                 // Update the local cache
                 this.homeAssistant.entities.set(entityId, freshState);
                 
@@ -147,9 +113,7 @@ class PanelManager {
                 // Also update the hidden entity element
                 this.updateHiddenEntityElement(entityId, freshState);
                 
-                console.log('🔄 ✅ Display updated with fresh data');
             } else {
-                console.log('🔄 ❌ Entity not found in fresh data:', entityId);
             }
         } catch (error) {
             console.error('❌ Failed to refresh entity:', entityId, error);
@@ -175,15 +139,11 @@ class PanelManager {
         const entitiesConfig = this.config.getEntitiesConfig();
         const gameScoreEntity = this.config.get('gameScore');
         
-        console.log('🔄 loadEntities called - gameScoreEntity:', gameScoreEntity);
-        console.log('🔄 Home Assistant connected:', this.homeAssistant.isConnected);
-        
         // Clear existing entities
         this.clearAllPanels();
         
         // Load game score if configured
         if (gameScoreEntity) {
-            console.log('🔄 Loading game score entity:', gameScoreEntity);
             this.loadGameScore(gameScoreEntity);
         } else {
             // Load regular entities if no game score configured
@@ -195,22 +155,14 @@ class PanelManager {
 
     // Load game score display
     loadGameScore(gameScoreEntity) {
-        console.log('🎮 loadGameScore called with:', gameScoreEntity);
-        console.log('🎮 Home Assistant connected:', this.homeAssistant.isConnected);
-        console.log('🎮 Available entities count:', this.homeAssistant.entities.size);
-        
         // HA client already subscribes to all state_changed events and filters client-side
-        
         const state = this.homeAssistant.getEntityState(gameScoreEntity);
-        console.log('🎮 Home Assistant state for', gameScoreEntity, ':', state);
         
         if (state && state.attributes) {
-            console.log('🎮 ✅ Using real entity data for:', gameScoreEntity);
             this.displayGameScore(state);
             // Create a hidden entity element for real-time updates (don't add to panel)
             this.createHiddenEntityElement(gameScoreEntity, state);
         } else {
-            console.log('🎮 ❌ No real data found, creating sample data for:', gameScoreEntity);
             // Create sample game data for testing with the correct entity_id
             const sampleGameData = this.createSampleGameData(gameScoreEntity);
             this.displayGameScore(sampleGameData);
@@ -575,7 +527,6 @@ class PanelManager {
 
     // Create hidden entity element for real-time updates (doesn't add to panel)
     createHiddenEntityElement(entityId, state) {
-        console.log('Creating hidden entity element for:', entityId);
         
         const element = document.createElement('div');
         element.className = 'entity-card';
@@ -597,7 +548,6 @@ class PanelManager {
         
         // Add to entity elements map but don't append to container
         this.entityElements.set(entityId, element);
-        console.log('Hidden entity element created and stored');
     }
 
     // Create entity content based on entity type
@@ -857,12 +807,9 @@ class PanelManager {
     updateEntity(entityId, state) {
         const gameScoreEntity = this.config.get('gameScore');
         
-        console.log('🎮 updateEntity called:', entityId, 'gameScoreEntity:', gameScoreEntity);
         
         // Always process game score entity updates
         if (entityId === gameScoreEntity) {
-            console.log('🎮 🔄 UPDATING game score display for:', entityId);
-            console.log('🎮 New state data:', state);
             
             // Update the 3-panel display with new game data
             this.displayGameScore(state);
@@ -870,7 +817,6 @@ class PanelManager {
             // Also update the hidden entity element for future updates
             const element = this.entityElements.get(entityId);
             if (element) {
-                console.log('🎮 Updating hidden element for:', entityId);
                 
                 // Update classes
                 element.classList.remove('on', 'off', 'unavailable');
@@ -895,17 +841,14 @@ class PanelManager {
                 element.classList.add('fade-in');
                 setTimeout(() => element.classList.remove('fade-in'), 500);
             } else {
-                console.log('🎮 No hidden element found for game score entity:', entityId);
             }
         } else {
-            console.log('🎮 Ignoring non-game-score entity update:', entityId);
         }
     }
 
     // Handle entity click
     async handleEntityClick(entityId, state) {
         if (!state || state.state === 'unavailable') {
-            console.warn('Entity not available:', entityId);
             return;
         }
         
@@ -1128,7 +1071,6 @@ class PanelManager {
         const attrs = gameData.attributes;
         const sport = attrs.sport;
         
-        console.log('🎮 Creating sport-specific stats for:', sport);
         
         switch (sport) {
             case 'hockey':

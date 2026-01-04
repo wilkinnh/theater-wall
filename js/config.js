@@ -60,7 +60,6 @@ class TheaterWallConfig {
             await this.loadEnvironmentConfig();
             
         } catch (error) {
-            console.warn('Failed to load configuration:', error);
             this.config = { ...this.defaultConfig };
         }
         this.applyConfig();
@@ -68,53 +67,33 @@ class TheaterWallConfig {
 
     // Load environment configuration from server API
     async loadEnvironmentConfig() {
-        console.log('=== FRONTEND ENV LOADING DEBUG ===');
-        console.log('Current server:', window.location.origin);
         
         try {
-            console.log('Fetching /api/env...');
             const response = await fetch('/api/env');
-            console.log('Response status:', response.status);
             
             if (response.ok) {
                 const envConfig = await response.json();
-                console.log('✅ Running on Node.js server with API support');
-                console.log('Raw envConfig from server:', envConfig);
                 
                 // Update config with environment variables
                 if (envConfig.HOME_ASSISTANT_URL) {
                     this.config.homeAssistantUrl = envConfig.HOME_ASSISTANT_URL;
-                    console.log('✅ HOME_ASSISTANT_URL set to:', envConfig.HOME_ASSISTANT_URL);
                 } else {
-                    console.log('❌ HOME_ASSISTANT_URL is empty');
                 }
                 
                 if (envConfig.HOME_ASSISTANT_TOKEN) {
                     this.config.homeAssistantToken = envConfig.HOME_ASSISTANT_TOKEN;
-                    console.log('✅ HOME_ASSISTANT_TOKEN set (length:', envConfig.HOME_ASSISTANT_TOKEN.length, ')');
                 } else {
-                    console.log('❌ HOME_ASSISTANT_TOKEN is empty');
                 }
                 
-                console.log('=== FINAL CONFIG ===');
-                console.log('homeAssistantUrl:', this.config.homeAssistantUrl);
-                console.log('homeAssistantToken:', this.config.homeAssistantToken ? 'SET (' + this.config.homeAssistantToken.length + ' chars)' : 'MISSING');
-                console.log('========================');
                 
                 // 🔄 Trigger Home Assistant connection after config loads
-                console.log('🔄 Triggering Home Assistant connection after config load');
                 setTimeout(() => {
                     if (window.homeAssistantClient && !window.homeAssistantClient.isConnected) {
-                        console.log('🔄 Connecting to Home Assistant after config load');
-                        console.log('🔄 HA Client config before connect:', window.homeAssistantClient.config);
                         // Update the HA client config with the new values
                         window.homeAssistantClient.config = this.getHomeAssistantConfig();
-                        console.log('🔄 Updated HA Client config:', window.homeAssistantClient.config);
                         window.homeAssistantClient.connect();
                     } else if (window.homeAssistantClient && window.homeAssistantClient.isConnected) {
-                        console.log('🔄 Home Assistant already connected');
                     } else {
-                        console.log('🔄 Home Assistant client not available yet');
                     }
                 }, 1500); // Increased delay to ensure config is fully applied
                 
@@ -124,9 +103,6 @@ class TheaterWallConfig {
         } catch (error) {
             console.error('❌ Not running on Node.js server or API not available');
             console.error('Error:', error.message);
-            console.log('💡 To use environment variables, run: npm start');
-            console.log('💡 Or use: node server.js');
-            console.log('💡 Current server does not support environment variable loading');
             
             // Try to load from env-config.js fallback
             this.loadFallbackConfig();
@@ -135,17 +111,12 @@ class TheaterWallConfig {
 
     // Fallback configuration loading
     loadFallbackConfig() {
-        console.log('=== LOADING FALLBACK CONFIG ===');
         
         // Check if env-config.js is available
         if (window.envConfigLoader) {
-            console.log('✅ Using env-config.js fallback');
             const envStatus = window.envConfigLoader.getConfigStatus();
-            console.log('Fallback env status:', envStatus);
             this.config = window.envConfigLoader.applyToConfig(this.config);
         } else {
-            console.log('❌ No fallback configuration available');
-            console.log('💡 Please run the Node.js server for environment variable support');
         }
     }
 
@@ -153,7 +124,6 @@ class TheaterWallConfig {
     saveConfig() {
         try {
             localStorage.setItem('theater-wall-config', JSON.stringify(this.config));
-            console.log('Configuration saved successfully');
         } catch (error) {
             console.error('Failed to save configuration:', error);
         }
@@ -206,7 +176,6 @@ class TheaterWallConfig {
 
     // Set configuration value (environment-driven - read-only)
     set(key, value) {
-        console.warn('Configuration is environment-driven - set operations are disabled');
     }
 
     // Get Home Assistant configuration
@@ -229,22 +198,18 @@ class TheaterWallConfig {
 
     // Reset configuration to defaults (environment-driven - disabled)
     resetToDefaults() {
-        console.warn('Configuration is environment-driven - reset operations are disabled');
     }
 
     // Export configuration (environment-driven - disabled)
     exportConfig() {
-        console.warn('Configuration is environment-driven - export operations are disabled');
     }
 
     // Import configuration (environment-driven - disabled)
     importConfig(file) {
-        console.warn('Configuration is environment-driven - import operations are disabled');
     }
 
     // Clear cached configuration and reload
     clearCacheAndReload() {
-        console.log('Clearing cached configuration...');
         
         // Clear all localStorage items
         localStorage.clear();

@@ -147,7 +147,6 @@ class VideoPlayer {
         const rightPanel = document.getElementById('panel-right');
         
         if (!leftPanel || !centerPanel || !rightPanel) {
-            console.warn('Panels not found, cannot create mask');
             return;
         }
         
@@ -169,18 +168,7 @@ class VideoPlayer {
         // const centerPanelWidth = (centerPanelRect.width / window.innerWidth) * 100;
         // const rightPanelStart = (rightPanelRect.left / window.innerWidth) * 100;
         // const rightPanelWidth = (rightPanelRect.width / window.innerWidth) * 100;
-        
-        console.log('Video mask calculations from DOM:', {
-            leftPanelStart,
-            leftPanelWidth,
-            centerPanelStart,
-            centerPanelWidth,
-            rightPanelStart,
-            rightPanelWidth,
-            windowWidth: window.innerWidth,
-            windowHeight: window.innerHeight
-        });
-        
+
         // Ensure main video is visible
         if (this.player) {
             this.player.style.display = 'block';
@@ -214,7 +202,6 @@ class VideoPlayer {
             this.player.style.mask = maskImage;
             this.player.style.webkitMask = maskImage;
             this.player.style.maskMode = 'alpha';
-            console.log('Applied CSS mask to video:', maskImage);
         }
         
         // Create visual indicators
@@ -268,12 +255,10 @@ class VideoPlayer {
     // Preload the default video for instant playback
     preloadDefaultVideo() {
         if (this.videoSources.length === 0) {
-            console.log('🎬 No videos to preload');
             return;
         }
 
         const videoSource = this.videoSources[0]; // Use first video (ric-flair.mp4)
-        console.log(`🎬 Preloading video: ${videoSource}`);
 
         // Create hidden video element for preloading
         const preloadVideo = document.createElement('video');
@@ -287,7 +272,6 @@ class VideoPlayer {
 
         // Listen for preload completion
         preloadVideo.addEventListener('canplaythrough', () => {
-            console.log(`✅ Video preloaded successfully: ${videoSource}`);
             this.preloadedVideo = preloadVideo;
             this.isVideoPreloaded = true;
             
@@ -383,7 +367,6 @@ class VideoPlayer {
         
         // Check if we have this video preloaded
         if (this.isVideoPreloaded && this.preloadedVideo.src.includes(source)) {
-            console.log(`🎬 Using preloaded video: ${source}`);
             
             // Copy preloaded video to main player
             this.player.src = source;
@@ -403,7 +386,6 @@ class VideoPlayer {
             });
             
         } else {
-            console.log(`🎬 Loading video on-demand: ${source}`);
             
             // Load normally if not preloaded
             this.player.src = source;
@@ -425,7 +407,6 @@ class VideoPlayer {
     // Show video overlay
     showVideoOverlay() {
         if (this.overlay) {
-            console.log('Showing video overlay, removing hidden class');
             this.overlay.classList.remove('hidden');
             this.overlay.classList.add('active');
         }
@@ -606,50 +587,10 @@ class VideoPlayer {
         if (mask) {
             if (mask.style.display === 'none') {
                 mask.style.display = 'block';
-                console.log('Video mask enabled');
             } else {
                 mask.style.display = 'none';
-                console.log('Video mask disabled - full video visible');
             }
-        } else {
-            console.log('No video mask found');
         }
-        
-        // Debug video element state
-        this.debugVideoElement();
-    }
-
-    // Debug video element properties
-    debugVideoElement() {
-        if (!this.player) {
-            console.log('No video player element found');
-            return;
-        }
-        
-        console.log('Video element debug:', {
-            element: this.player,
-            src: this.player.src,
-            currentSrc: this.player.currentSrc,
-            readyState: this.player.readyState,
-            networkState: this.player.networkState,
-            videoWidth: this.player.videoWidth,
-            videoHeight: this.player.videoHeight,
-            paused: this.player.paused,
-            ended: this.player.ended,
-            currentTime: this.player.currentTime,
-            duration: this.player.duration,
-            style: {
-                display: this.player.style.display,
-                visibility: this.player.style.visibility,
-                opacity: this.player.style.opacity,
-                width: this.player.style.width,
-                height: this.player.style.height,
-                zIndex: this.player.style.zIndex
-            },
-            computedStyle: window.getComputedStyle(this.player),
-            parentElement: this.player.parentElement,
-            isVisible: this.player.offsetWidth > 0 && this.player.offsetHeight > 0
-        });
     }
 
     // Get current video state

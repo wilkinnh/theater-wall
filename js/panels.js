@@ -223,31 +223,36 @@ class PanelManager {
     displayGameScore(gameData) {
         console.log('🎮 displayGameScore called with:', gameData);
         const attrs = gameData.attributes;
-        
+
         console.log('🎮 Game data attributes:', attrs);
         console.log('🎮 ALWAYS updating 3-panel display');
-        
+
+        // Determine team positioning based on sport and home/away status
+        const teamPositioning = this.getTeamPositioning(attrs);
+
+        console.log('🎮 Team positioning:', teamPositioning);
+
         // ALWAYS update the 3-panel display (this is what users see)
-        // Left panel - Opponent
+        // Left panel
         const leftContainer = this.containers.sensors;
         console.log('🎮 Left container:', leftContainer);
         if (leftContainer) {
-            console.log('🎮 Updating left panel with opponent data');
+            console.log('🎮 Updating left panel with', teamPositioning.left.label, 'data');
             leftContainer.innerHTML = `
-                <div class="game-score-display team-${attrs.opponent_abbr.toLowerCase()}">
-                    ${attrs.opponent_logo ? `
+                <div class="game-score-display team-${teamPositioning.left.abbr.toLowerCase()}">
+                    ${teamPositioning.left.logo ? `
                         <div class="team-logo">
-                            <img src="${attrs.opponent_logo}" alt="${attrs.opponent_abbr}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <img src="${teamPositioning.left.logo}" alt="${teamPositioning.left.abbr}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                             <div class="fallback-logo">🏆</div>
                         </div>
                     ` : ''}
-                    <div class="team-abbr">${attrs.opponent_abbr}</div>
-                    <div class="team-record">${attrs.opponent_record}</div>
-                    <div class="team-score">${attrs.opponent_score}</div>
+                    <div class="team-abbr">${teamPositioning.left.abbr}</div>
+                    <div class="team-record">${teamPositioning.left.record}</div>
+                    <div class="team-score">${teamPositioning.left.score}</div>
                 </div>
             `;
         }
-        
+
         // Center panel - Sport-specific game stats
         const centerContainer = this.containers.controls;
         console.log('🎮 Center container:', centerContainer);
@@ -255,28 +260,121 @@ class PanelManager {
             console.log('🎮 Updating center panel with', attrs.sport, 'game stats');
             centerContainer.innerHTML = this.createSportSpecificStats(gameData);
         }
-        
-        // Right panel - Selected team
+
+        // Right panel
         const rightContainer = this.containers.media;
         console.log('🎮 Right container:', rightContainer);
         if (rightContainer) {
-            console.log('🎮 Updating right panel with team data');
+            console.log('🎮 Updating right panel with', teamPositioning.right.label, 'data');
             rightContainer.innerHTML = `
-                <div class="game-score-display team-${(attrs.team_abbr || '').toLowerCase()}">
-                    ${attrs.team_logo ? `
+                <div class="game-score-display team-${teamPositioning.right.abbr.toLowerCase()}">
+                    ${teamPositioning.right.logo ? `
                         <div class="team-logo">
-                            <img src="${attrs.team_logo}" alt="${attrs.team_abbr}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                            <img src="${teamPositioning.right.logo}" alt="${teamPositioning.right.abbr}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                             <div class="fallback-logo">🏆</div>
                         </div>
                     ` : ''}
-                    <div class="team-abbr">${attrs.team_abbr || 'N/A'}</div>
-                    <div class="team-record">${attrs.team_record || '0-0'}</div>
-                    <div class="team-score">${attrs.team_score || '0'}</div>
+                    <div class="team-abbr">${teamPositioning.right.abbr || 'N/A'}</div>
+                    <div class="team-record">${teamPositioning.right.record || '0-0'}</div>
+                    <div class="team-score">${teamPositioning.right.score || '0'}</div>
                 </div>
             `;
         }
-        
+
         console.log('🎮 displayGameScore completed - 3-panel display updated');
+    }
+
+    // Determine team positioning based on sport type and home/away status
+    getTeamPositioning(attrs) {
+        const sport = attrs.sport?.toLowerCase();
+        const teamHomeAway = attrs.team_homeaway; // 'home' or 'away'
+        const opponentHomeAway = attrs.opponent_homeaway; // 'home' or 'away'
+
+        console.log('🎮 Team positioning logic:', {
+            sport,
+            teamHomeAway,
+            opponentHomeAway,
+            teamIsHome: teamHomeAway === 'home'
+        });
+
+        // Determine if soccer or American sport
+        const isSoccer = sport === 'soccer' || sport === 'football' && attrs.league?.toLowerCase() !== 'nfl';
+
+        let leftTeam, rightTeam;
+
+        if (isSoccer) {
+            // Soccer: Home team on the LEFT
+            if (teamHomeAway === 'home') {
+                // Selected team is home, put on left
+                leftTeam = {
+                    label: 'Team (Home)',
+                    abbr: attrs.team_abbr || 'N/A',
+                    logo: attrs.team_logo,
+                    record: attrs.team_record || '0-0',
+                    score: attrs.team_score || '0'
+                };
+                rightTeam = {
+                    label: 'Opponent (Away)',
+                    abbr: attrs.opponent_abbr || 'N/A',
+                    logo: attrs.opponent_logo,
+                    record: attrs.opponent_record || '0-0',
+                    score: attrs.opponent_score || '0'
+                };
+            } else {
+                // Selected team is away, opponent is home, put opponent on left
+                leftTeam = {
+                    label: 'Opponent (Home)',
+                    abbr: attrs.opponent_abbr || 'N/A',
+                    logo: attrs.opponent_logo,
+                    record: attrs.opponent_record || '0-0',
+                    score: attrs.opponent_score || '0'
+                };
+                rightTeam = {
+                    label: 'Team (Away)',
+                    abbr: attrs.team_abbr || 'N/A',
+                    logo: attrs.team_logo,
+                    record: attrs.team_record || '0-0',
+                    score: attrs.team_score || '0'
+                };
+            }
+        } else {
+            // American sports (NFL, NBA, MLB, NHL, etc.): Home team on the RIGHT
+            if (teamHomeAway === 'home') {
+                // Selected team is home, put on right
+                leftTeam = {
+                    label: 'Opponent (Away)',
+                    abbr: attrs.opponent_abbr || 'N/A',
+                    logo: attrs.opponent_logo,
+                    record: attrs.opponent_record || '0-0',
+                    score: attrs.opponent_score || '0'
+                };
+                rightTeam = {
+                    label: 'Team (Home)',
+                    abbr: attrs.team_abbr || 'N/A',
+                    logo: attrs.team_logo,
+                    record: attrs.team_record || '0-0',
+                    score: attrs.team_score || '0'
+                };
+            } else {
+                // Selected team is away, opponent is home, put opponent on right
+                leftTeam = {
+                    label: 'Team (Away)',
+                    abbr: attrs.team_abbr || 'N/A',
+                    logo: attrs.team_logo,
+                    record: attrs.team_record || '0-0',
+                    score: attrs.team_score || '0'
+                };
+                rightTeam = {
+                    label: 'Opponent (Home)',
+                    abbr: attrs.opponent_abbr || 'N/A',
+                    logo: attrs.opponent_logo,
+                    record: attrs.opponent_record || '0-0',
+                    score: attrs.opponent_score || '0'
+                };
+            }
+        }
+
+        return { left: leftTeam, right: rightTeam };
     }
 
     // Create sample game data for testing

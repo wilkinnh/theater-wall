@@ -38,10 +38,8 @@ class PanelManager {
             this.startPeriodicRefresh();
         });
         
-        this.homeAssistant.on('states-loaded', (states) => {
+        this.homeAssistant.on('states-loaded', () => {
             // Game score is managed by team-selector from Home Assistant
-            // Don't load it here - let team-selector handle it to avoid flash/race conditions
-            this.displayEntities(states);
         });
         
         this.homeAssistant.on('state-changed', (data) => {
@@ -124,20 +122,10 @@ class PanelManager {
 
     // Load entities from configuration
     loadEntities() {
-        const entitiesConfig = this.config.getEntitiesConfig();
         const gameScoreEntity = this.config.get('gameScore');
-        
-        // Clear existing entities
         this.clearAllPanels();
-        
-        // Load game score if configured
         if (gameScoreEntity) {
             this.loadGameScore(gameScoreEntity);
-        } else {
-            // Load regular entities if no game score configured
-            this.loadPanelEntities('sensors', entitiesConfig.sensors);
-            this.loadPanelEntities('controls', entitiesConfig.controls);
-            this.loadPanelEntities('media', entitiesConfig.media);
         }
     }
 
@@ -361,37 +349,6 @@ class PanelManager {
         if (j == 2 && k != 12) return 'nd';
         if (j == 3 && k != 13) return 'rd';
         return 'th';
-    }
-
-    // Load entities for a specific panel
-    loadPanelEntities(panelType, entityIds) {
-        const container = this.containers[panelType];
-        if (!container) return;
-        
-        entityIds.forEach(entityId => {
-            const state = this.homeAssistant.getEntityState(entityId);
-            if (state) {
-                this.createEntityElement(panelType, entityId, state);
-            } else {
-                // Create placeholder for unavailable entity
-                this.createEntityElement(panelType, entityId, null);
-            }
-        });
-    }
-
-    // Display entities from loaded states
-    displayEntities(states) {
-        const entitiesConfig = this.config.getEntitiesConfig();
-        
-        // Filter and display entities based on configuration
-        Object.keys(entitiesConfig).forEach(panelType => {
-            entitiesConfig[panelType].forEach(entityId => {
-                const state = states.find(s => s.entity_id === entityId);
-                if (state) {
-                    this.updateEntity(entityId, state);
-                }
-            });
-        });
     }
 
     // Create entity element

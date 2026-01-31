@@ -13,32 +13,17 @@ class TheaterWallConfig {
             panelGap: 2,
             homeAssistantUrl: 'ws://homeassistant.local:8123/api/websocket',
             homeAssistantToken: '',
-            entities: {
-                sensors: [],
-                controls: [
-                ],
-                media: [
-                ]
-            },
             video: {
-                autoPlay: false,
                 loop: true,
                 volume: 0.5,
                 defaultSources: [
                     'assets/videos/ric-flair.mp4'
                 ]
             },
-            gameScore: null, // Set by team-selector from Home Assistant
-            display: {
-                brightness: 1.0,
-                contrast: 1.0,
-                highContrast: false,
-                largeText: false
-            }
+            gameScore: null // Set by team-selector from Home Assistant
         };
         
         this.config = { ...this.defaultConfig };
-        this.initEventListeners();
         this.loadConfig();
     }
 
@@ -65,7 +50,6 @@ class TheaterWallConfig {
 
     // Load environment configuration from server API
     async loadEnvironmentConfig() {
-        
         try {
             const response = await fetch('/api/env');
             
@@ -75,25 +59,19 @@ class TheaterWallConfig {
                 // Update config with environment variables
                 if (envConfig.HOME_ASSISTANT_URL) {
                     this.config.homeAssistantUrl = envConfig.HOME_ASSISTANT_URL;
-                } else {
                 }
-                
+
                 if (envConfig.HOME_ASSISTANT_TOKEN) {
                     this.config.homeAssistantToken = envConfig.HOME_ASSISTANT_TOKEN;
-                } else {
                 }
-                
-                
-                // 🔄 Trigger Home Assistant connection after config loads
+
+                // Trigger Home Assistant connection after config loads
                 setTimeout(() => {
                     if (window.homeAssistantClient && !window.homeAssistantClient.isConnected) {
-                        // Update the HA client config with the new values
                         window.homeAssistantClient.config = this.getHomeAssistantConfig();
                         window.homeAssistantClient.connect();
-                    } else if (window.homeAssistantClient && window.homeAssistantClient.isConnected) {
-                    } else {
                     }
-                }, 1500); // Increased delay to ensure config is fully applied
+                }, 1500);
                 
             } else {
                 console.error('Failed to fetch /api/env, status:', response.status);
@@ -109,12 +87,8 @@ class TheaterWallConfig {
 
     // Fallback configuration loading
     loadFallbackConfig() {
-        
-        // Check if env-config.js is available
         if (window.envConfigLoader) {
-            const envStatus = window.envConfigLoader.getConfigStatus();
             this.config = window.envConfigLoader.applyToConfig(this.config);
-        } else {
         }
     }
 
@@ -129,11 +103,7 @@ class TheaterWallConfig {
 
     // Apply configuration to the DOM
     applyConfig() {
-        // Apply panel dimensions
         this.applyPanelDimensions();
-        
-        // Apply display settings
-        this.applyDisplaySettings();
     }
 
     // Apply panel dimensions to CSS variables
@@ -143,37 +113,9 @@ class TheaterWallConfig {
         root.style.setProperty('--panel-gap', `${this.config.panelGap}%`);
     }
 
-    // Apply display settings
-    applyDisplaySettings() {
-        const root = document.documentElement;
-        root.style.setProperty('--brightness', this.config.display.brightness);
-        root.style.setProperty('--contrast', this.config.display.contrast);
-        
-        if (this.config.display.highContrast) {
-            document.body.classList.add('high-contrast');
-        } else {
-            document.body.classList.remove('high-contrast');
-        }
-        
-        if (this.config.display.largeText) {
-            document.body.classList.add('large-text');
-        } else {
-            document.body.classList.remove('large-text');
-        }
-    }
-
-    // Initialize event listeners (environment-driven - no UI config)
-    initEventListeners() {
-        // No configuration UI listeners needed - environment-driven only
-    }
-
     // Get configuration value
     get(key) {
         return key.split('.').reduce((obj, k) => obj && obj[k], this.config);
-    }
-
-    // Set configuration value (environment-driven - read-only)
-    set(key, value) {
     }
 
     // Get Home Assistant configuration
@@ -184,43 +126,18 @@ class TheaterWallConfig {
         };
     }
 
-    // Get entities configuration
-    getEntitiesConfig() {
-        return this.config.entities;
-    }
-
     // Get video configuration
     getVideoConfig() {
         return this.config.video;
     }
 
-    // Reset configuration to defaults (environment-driven - disabled)
-    resetToDefaults() {
-    }
-
-    // Export configuration (environment-driven - disabled)
-    exportConfig() {
-    }
-
-    // Import configuration (environment-driven - disabled)
-    importConfig(file) {
-    }
-
     // Clear cached configuration and reload
     clearCacheAndReload() {
-        
-        // Clear all localStorage items
         localStorage.clear();
-        
-        // Clear sessionStorage as well
         sessionStorage.clear();
-        
         this.showNotification('Configuration cache cleared. Reloading...', 'info');
-        
-        // Force hard reload with timestamp to bypass cache
-        const timestamp = Date.now();
         setTimeout(() => {
-            window.location.href = window.location.href + '?t=' + timestamp;
+            window.location.href = window.location.href + '?t=' + Date.now();
         }, 100);
     }
 

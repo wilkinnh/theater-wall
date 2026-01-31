@@ -202,11 +202,6 @@ class TeamSelector {
         // Update the global configuration to use the new entity
         if (this.config) {
             this.config.config.gameScore = team.entity_id;
-
-            // Update sensors array to include the team entity
-            if (!this.config.config.entities.sensors.includes(team.entity_id)) {
-                this.config.config.entities.sensors = [team.entity_id];
-            }
         }
 
         // Always update display and reload entities for external changes

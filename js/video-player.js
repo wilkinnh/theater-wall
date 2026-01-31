@@ -466,7 +466,6 @@ class VideoPlayer {
     adjustVolume(delta) {
         if (this.player) {
             this.player.volume = Math.max(0, Math.min(1, this.player.volume + delta));
-            this.config.set('video.volume', this.player.volume);
         }
     }
 
@@ -569,7 +568,6 @@ class VideoPlayer {
     // Add video source
     addVideoSource(source) {
         this.videoSources.push(source);
-        this.config.set('video.defaultSources', this.videoSources);
     }
 
     // Remove video source
@@ -577,7 +575,6 @@ class VideoPlayer {
         const index = this.videoSources.indexOf(source);
         if (index > -1) {
             this.videoSources.splice(index, 1);
-            this.config.set('video.defaultSources', this.videoSources);
         }
     }
 

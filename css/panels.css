@@ -532,7 +532,7 @@
     display: grid;
     grid-template-columns: 1fr 60px;
     gap: 10px;
-    padding: 8px 12px;
+    padding: 8px 12px 8px 0;
     font-weight: 600;
     color: #888;
     font-size: 12px;
@@ -545,31 +545,14 @@
     display: grid;
     grid-template-columns: 1fr 60px;
     gap: 10px;
-    padding: 10px 12px;
+    padding: 10px 12px 10px 0;
     align-items: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    transition: background 0.2s ease;
-}
-
-.standings-row:hover {
-    background: rgba(255, 255, 255, 0.05);
-}
-
-.standings-row.highlight-team {
-    background: rgba(239, 1, 7, 0.15);
-    border-left: 3px solid #EF0107;
 }
 
 .standings-team {
     display: flex;
     align-items: center;
-    gap: 10px;
-}
-
-.standings-logo {
-    width: 24px;
-    height: 24px;
-    object-fit: contain;
 }
 
 .standings-name {

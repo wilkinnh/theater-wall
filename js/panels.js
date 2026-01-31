@@ -1203,24 +1203,50 @@ class PanelManager {
     createArsenalStats(gameData) {
         const attrs = gameData.attributes;
 
-        // Start fetching standings asynchronously and update when ready
-        this.fetchPremierLeagueStandings().then(standings => {
-            if (standings) {
-                this.updateArsenalStandingsDisplay(standings);
-            }
-        });
+        // Only fetch standings if not already cached (prevents flickering on refresh)
+        if (!this.cachedStandings) {
+            this.fetchPremierLeagueStandings().then(standings => {
+                if (standings) {
+                    this.cachedStandings = standings;
+                    this.updateArsenalStandingsDisplay(standings);
+                }
+            });
+        }
 
-        // Return initial HTML with loading state for standings
+        // If we have cached standings, render them directly
+        const standingsHtml = this.cachedStandings
+            ? this.generateStandingsHtml(this.cachedStandings)
+            : '<div class="standings-loading">Loading standings...</div>';
+
         return `
             <div class="game-stats sport-soccer arsenal-special">
                 <div class="sport-header soccer-header">
                     <div class="soccer-clock">${attrs.clock || 'N/A'}</div>
                 </div>
-                <div class="section-title">Premier League Top 6</div>
                 <div id="arsenal-standings" class="league-standings">
-                    <div class="standings-loading">Loading standings...</div>
+                    ${standingsHtml}
                 </div>
             </div>
+        `;
+    }
+
+    // Generate standings HTML from data
+    generateStandingsHtml(standings) {
+        const rowsHtml = standings.map(team => `
+            <div class="standings-row">
+                <div class="standings-team">
+                    <span class="standings-name">${team.name}</span>
+                </div>
+                <div class="standings-points">${team.points}</div>
+            </div>
+        `).join('');
+
+        return `
+            <div class="standings-header">
+                <div class="standings-team-header">Team</div>
+                <div class="standings-points-header">Pts</div>
+            </div>
+            ${rowsHtml}
         `;
     }
 
@@ -1229,23 +1255,7 @@ class PanelManager {
         const standingsContainer = document.getElementById('arsenal-standings');
         if (!standingsContainer) return;
 
-        const standingsHtml = standings.map(team => `
-            <div class="standings-row ${team.shortName === 'ARS' ? 'highlight-team' : ''}">
-                <div class="standings-team">
-                    ${team.logo ? `<img src="${team.logo}" alt="${team.shortName}" class="standings-logo">` : ''}
-                    <span class="standings-name">${team.name}</span>
-                </div>
-                <div class="standings-points">${team.points}</div>
-            </div>
-        `).join('');
-
-        standingsContainer.innerHTML = `
-            <div class="standings-header">
-                <div class="standings-team-header">Team</div>
-                <div class="standings-points-header">Pts</div>
-            </div>
-            ${standingsHtml}
-        `;
+        standingsContainer.innerHTML = this.generateStandingsHtml(standings);
     }
 }
 

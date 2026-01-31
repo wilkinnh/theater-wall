@@ -17,26 +17,19 @@ class TeamSelector {
     init() {
         this.config = window.theaterWallConfig;
         this.panels = window.panelManager;
-        
+
         // Start watching for external changes
         this.startExternalWatch();
-        
+
         // Setup keyboard shortcuts for team selection
         this.setupKeyboardShortcuts();
-        
-        // Load initial team
-        this.loadCurrentTeam();
+
+        // NOTE: Do not load from localStorage here - Home Assistant is the source of truth
+        // The HA connection handlers (loadInitialEntityFromHA, polling) will load the correct value
     }
 
     // Start watching for external configuration changes
     startExternalWatch() {
-        // Watch localStorage changes
-        window.addEventListener('storage', (event) => {
-            if (event.key === 'theater-wall-selected-team') {
-                this.handleExternalTeamChange(event.newValue);
-            }
-        });
-
         // Subscribe to Home Assistant entity changes for the selected entity input
         this.subscribeToEntityChanges();
 
@@ -203,9 +196,6 @@ class TeamSelector {
 
         this.currentTeam = team;
 
-        // Update localStorage
-        localStorage.setItem('theater-wall-selected-team', JSON.stringify(team));
-
         // Update Home Assistant entity to reflect the selection
         this.updateHomeAssistantEntity(team.entity_id);
 
@@ -322,19 +312,6 @@ class TeamSelector {
             } catch (error) {
                 console.error('Team selector: Failed to subscribe to entity updates:', error);
             }
-        }
-    }
-
-    // Load current team from localStorage
-    loadCurrentTeam() {
-        try {
-            const savedTeam = localStorage.getItem('theater-wall-selected-team');
-            if (savedTeam) {
-                const team = JSON.parse(savedTeam);
-                this.setTeam(team);
-            }
-        } catch (error) {
-            console.warn('Team selector: Failed to load saved team', error);
         }
     }
 
@@ -487,7 +464,6 @@ class TeamSelector {
     // Clear current team
     clearTeam() {
         this.currentTeam = null;
-        localStorage.removeItem('theater-wall-selected-team');
         this.panels.clearAllPanels();
         this.config.showNotification('Team cleared', 'info');
     }

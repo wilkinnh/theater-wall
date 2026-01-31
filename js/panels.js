@@ -27,6 +27,28 @@ class PanelManager {
         this.homeAssistant = window.homeAssistantClient;
 
         this.setupEventListeners();
+        this.showLoading();
+    }
+
+    // Show loading state
+    showLoading() {
+        const container = this.containers.controls;
+        if (!container) return;
+
+        container.innerHTML = `
+            <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <div class="loading-text">Connecting to Home Assistant...</div>
+            </div>
+        `;
+    }
+
+    // Hide loading state
+    hideLoading() {
+        const loadingEl = document.querySelector('.loading-state');
+        if (loadingEl) {
+            loadingEl.remove();
+        }
     }
 
     // Setup event listeners
@@ -144,6 +166,7 @@ class PanelManager {
 
     // Display game score in panels
     displayGameScore(gameData) {
+        this.hideLoading();
         const attrs = gameData.attributes;
 
         // Determine team positioning based on sport and home/away status

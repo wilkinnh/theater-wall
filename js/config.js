@@ -14,9 +14,7 @@ class TheaterWallConfig {
             homeAssistantUrl: 'ws://homeassistant.local:8123/api/websocket',
             homeAssistantToken: '',
             entities: {
-                sensors: [
-                    'sensor.carolina_hurricanes',
-                ],
+                sensors: [],
                 controls: [
                 ],
                 media: [
@@ -30,7 +28,7 @@ class TheaterWallConfig {
                     'assets/videos/ric-flair.mp4'
                 ]
             },
-            gameScore: 'sensor.carolina_hurricanes',
+            gameScore: null, // Set by team-selector from Home Assistant
             display: {
                 brightness: 1.0,
                 contrast: 1.0,

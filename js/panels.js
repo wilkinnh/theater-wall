@@ -25,9 +25,8 @@ class PanelManager {
     init() {
         this.config = window.theaterWallConfig;
         this.homeAssistant = window.homeAssistantClient;
-        
+
         this.setupEventListeners();
-        this.loadSampleData();
     }
 
     // Setup event listeners
@@ -40,19 +39,8 @@ class PanelManager {
         });
         
         this.homeAssistant.on('states-loaded', (states) => {
-            
-            // Check if our game score entity exists
-            const gameScoreEntity = this.config.get('gameScore');
-            const gameScoreState = states.find(s => s.entity_id === gameScoreEntity);
-
-            // Log the current game data
-            if (gameScoreState) {
-                // 🔄 RELOAD GAME SCORE when states are loaded
-                this.loadGameScore(gameScoreEntity);
-            } else {
-                this.loadGameScore(gameScoreEntity);
-            }
-            
+            // Game score is managed by team-selector from Home Assistant
+            // Don't load it here - let team-selector handle it to avoid flash/race conditions
             this.displayEntities(states);
         });
         
@@ -157,18 +145,13 @@ class PanelManager {
     loadGameScore(gameScoreEntity) {
         // HA client already subscribes to all state_changed events and filters client-side
         const state = this.homeAssistant.getEntityState(gameScoreEntity);
-        
+
         if (state && state.attributes) {
             this.displayGameScore(state);
             // Create a hidden entity element for real-time updates (don't add to panel)
             this.createHiddenEntityElement(gameScoreEntity, state);
-        } else {
-            // Create sample game data for testing with the correct entity_id
-            const sampleGameData = this.createSampleGameData(gameScoreEntity);
-            this.displayGameScore(sampleGameData);
-            // Create a hidden entity element for real-time updates (don't add to panel)
-            this.createHiddenEntityElement(gameScoreEntity, sampleGameData);
         }
+        // If no state available, don't display anything - wait for HA to provide data
     }
 
     // Display game score in panels
@@ -305,89 +288,6 @@ class PanelManager {
         }
 
         return { left: leftTeam, right: rightTeam };
-    }
-
-    // Create sample game data for testing
-    createSampleGameData(entityId = 'sensor.atlanta_falcons') {
-        // Extract team name from entity ID
-        const teamName = entityId.replace('sensor.', '').replace(/_/g, ' ');
-
-        return {
-            entity_id: entityId,
-            state: 'active',
-            attributes: {
-                attribution: 'NO REAL DATA - Entity not found in Home Assistant',
-                sport: 'football',
-                sport_path: 'football',
-                league: 'NFL',
-                league_path: 'nfl',
-                league_logo: 'https://a.espncdn.com/i/teamlogos/leagues/500/nfl.png',
-                season: 'regular-season',
-                team_abbr: '-',
-                opponent_abbr: '-',
-                event_name: `⚠️ ${entityId} - NO REAL DATA`,
-                event_url: 'https://www.espn.com/nfl/game',
-                date: '2025-10-20T00:20Z',
-                kickoff_in: 'Entity not found in Home Assistant',
-                series_summary: null,
-                venue: 'Check Home Assistant',
-                location: 'Entity: ' + entityId,
-                tv_network: 'Configure sensor in HA',
-                odds: null,
-                overunder: null,
-                team_name: '-',
-                team_long_name: '-',
-                team_id: '1',
-                team_record: '-',
-                team_rank: null,
-                team_conference_id: null,
-                team_homeaway: 'away',
-                team_logo: '',
-                team_url: 'https://www.espn.com/nfl/team',
-                team_colors: ['#ff0000', '#ffffff'],
-                team_score: '-',
-                team_win_probability: 0,
-                team_winner: null,
-                team_timeouts: 3,
-                opponent_name: '-',
-                opponent_long_name: '-',
-                opponent_id: '99',
-                opponent_record: '-',
-                opponent_rank: null,
-                opponent_conference_id: null,
-                opponent_homeaway: 'home',
-                opponent_logo: '',
-                opponent_url: 'https://www.espn.com/nfl/team',
-                opponent_colors: ['#ffffff', '#000000'],
-                opponent_score: '-',
-                opponent_win_probability: 0,
-                opponent_winner: null,
-                opponent_timeouts: 3,
-                quarter: '-',
-                clock: '-',
-                possession: null,
-                last_play: 'Entity not found in Home Assistant',
-                down_distance_text: 'Create sensor: ' + entityId,
-                outs: null,
-                balls: null,
-                strikes: null,
-                on_first: null,
-                on_second: null,
-                on_third: null,
-                team_shots_on_target: null,
-                team_total_shots: null,
-                opponent_shots_on_target: null,
-                opponent_total_shots: null,
-                team_sets_won: null,
-                opponent_sets_won: null,
-                last_update: new Date().toLocaleString(),
-                api_message: '⚠️ ENTITY NOT FOUND - Create this sensor in Home Assistant',
-                api_url: 'Entity ID: ' + entityId,
-                icon: 'mdi:alert',
-                friendly_name: '⚠️ ' + teamName + ' (NOT FOUND)'
-            },
-            last_updated: new Date().toISOString()
-        };
     }
 
     // Create game score content
@@ -920,71 +820,6 @@ class PanelManager {
             }
         });
         this.entityElements.clear();
-    }
-
-    // Load sample data for demonstration
-    loadSampleData() {
-        const sampleData = {
-            'sensor.temperature_living_room': {
-                entity_id: 'sensor.temperature_living_room',
-                state: '72.5',
-                attributes: {
-                    friendly_name: 'Living Room Temperature',
-                    unit_of_measurement: '°F',
-                    device_class: 'temperature'
-                },
-                last_updated: new Date().toISOString()
-            },
-            'sensor.humidity_living_room': {
-                entity_id: 'sensor.humidity_living_room',
-                state: '45',
-                attributes: {
-                    friendly_name: 'Living Room Humidity',
-                    unit_of_measurement: '%',
-                    device_class: 'humidity'
-                },
-                last_updated: new Date().toISOString()
-            },
-            'binary_sensor.motion_front_door': {
-                entity_id: 'binary_sensor.motion_front_door',
-                state: 'off',
-                attributes: {
-                    friendly_name: 'Front Door Motion',
-                    device_class: 'motion'
-                },
-                last_updated: new Date().toISOString()
-            },
-            'light.living_room': {
-                entity_id: 'light.living_room',
-                state: 'on',
-                attributes: {
-                    friendly_name: 'Living Room Lights',
-                    brightness: 200
-                },
-                last_updated: new Date().toISOString()
-            },
-            'media_player.living_room_speaker': {
-                entity_id: 'media_player.living_room_speaker',
-                state: 'playing',
-                attributes: {
-                    friendly_name: 'Living Room Speaker',
-                    media_title: 'Favorite Song',
-                    media_artist: 'Artist Name',
-                    volume_level: 0.7
-                },
-                last_updated: new Date().toISOString()
-            }
-        };
-        
-        // Display sample data if not connected to Home Assistant and no game score configured
-        if (!this.homeAssistant.isConnected && !this.config.get('gameScore')) {
-            Object.entries(sampleData).forEach(([entityId, state]) => {
-                const panelType = this.getPanelTypeForEntity(entityId);
-                if (panelType) {
-                    this.createEntityElement(panelType, entityId, state);
-                }
-            });
-        }
     }
 
     // Get panel type for entity

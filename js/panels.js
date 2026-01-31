@@ -1085,6 +1085,13 @@ class PanelManager {
     // Create soccer-specific stats
     createSoccerStats(gameData) {
         const attrs = gameData.attributes;
+
+        // Check if this is Arsenal - show special panel with league standings
+        const gameScoreEntity = this.config.get('gameScore');
+        if (gameScoreEntity === 'sensor.arsenal') {
+            return this.createArsenalStats(gameData);
+        }
+
         const formattedLastPlay = this.formatSoccerLastPlay(attrs.last_play);
 
         return `
@@ -1154,6 +1161,91 @@ class PanelManager {
         if (attrs.on_second) runners.push('2B');
         if (attrs.on_third) runners.push('3B');
         return runners.length > 0 ? runners.join(', ') : 'None';
+    }
+
+    // Fetch Premier League standings from ESPN API
+    async fetchPremierLeagueStandings() {
+        try {
+            const response = await fetch('https://site.api.espn.com/apis/v2/sports/soccer/eng.1/standings');
+            if (!response.ok) {
+                throw new Error(`ESPN API error: ${response.status}`);
+            }
+            const data = await response.json();
+
+            // Navigate to the entries array
+            const entries = data.children?.[0]?.standings?.entries || [];
+
+            // Extract top 6 teams with their rank and points
+            const top6 = entries.slice(0, 6).map(entry => {
+                const stats = entry.stats || [];
+                // Find points stat (name: "points")
+                const pointsStat = stats.find(s => s.name === 'points');
+                // Find rank stat (name: "rank")
+                const rankStat = stats.find(s => s.name === 'rank');
+
+                return {
+                    rank: rankStat?.displayValue || entry.stats?.[10]?.displayValue || '?',
+                    name: entry.team?.displayName || 'Unknown',
+                    shortName: entry.team?.abbreviation || entry.team?.shortDisplayName || 'UNK',
+                    logo: entry.team?.logos?.[0]?.href || '',
+                    points: pointsStat?.displayValue || entry.stats?.[3]?.displayValue || '0'
+                };
+            });
+
+            return top6;
+        } catch (error) {
+            console.error('Failed to fetch Premier League standings:', error);
+            return null;
+        }
+    }
+
+    // Create Arsenal-specific stats panel with league table
+    createArsenalStats(gameData) {
+        const attrs = gameData.attributes;
+
+        // Start fetching standings asynchronously and update when ready
+        this.fetchPremierLeagueStandings().then(standings => {
+            if (standings) {
+                this.updateArsenalStandingsDisplay(standings);
+            }
+        });
+
+        // Return initial HTML with loading state for standings
+        return `
+            <div class="game-stats sport-soccer arsenal-special">
+                <div class="sport-header soccer-header">
+                    <div class="soccer-clock">${attrs.clock || 'N/A'}</div>
+                </div>
+                <div class="section-title">Premier League Top 6</div>
+                <div id="arsenal-standings" class="league-standings">
+                    <div class="standings-loading">Loading standings...</div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Update Arsenal standings display after fetch completes
+    updateArsenalStandingsDisplay(standings) {
+        const standingsContainer = document.getElementById('arsenal-standings');
+        if (!standingsContainer) return;
+
+        const standingsHtml = standings.map(team => `
+            <div class="standings-row ${team.shortName === 'ARS' ? 'highlight-team' : ''}">
+                <div class="standings-team">
+                    ${team.logo ? `<img src="${team.logo}" alt="${team.shortName}" class="standings-logo">` : ''}
+                    <span class="standings-name">${team.name}</span>
+                </div>
+                <div class="standings-points">${team.points}</div>
+            </div>
+        `).join('');
+
+        standingsContainer.innerHTML = `
+            <div class="standings-header">
+                <div class="standings-team-header">Team</div>
+                <div class="standings-points-header">Pts</div>
+            </div>
+            ${standingsHtml}
+        `;
     }
 }
 

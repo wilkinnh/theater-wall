@@ -516,6 +516,83 @@
     gap: 5px;
 }
 
+/* Arsenal Special Panel - Premier League Standings */
+.arsenal-special .league-standings {
+    margin-top: 10px;
+}
+
+.standings-loading {
+    color: #888;
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+.standings-header {
+    display: grid;
+    grid-template-columns: 1fr 60px;
+    gap: 10px;
+    padding: 8px 12px;
+    font-weight: 600;
+    color: #888;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.standings-row {
+    display: grid;
+    grid-template-columns: 1fr 60px;
+    gap: 10px;
+    padding: 10px 12px;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.2s ease;
+}
+
+.standings-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.standings-row.highlight-team {
+    background: rgba(239, 1, 7, 0.15);
+    border-left: 3px solid #EF0107;
+}
+
+.standings-team {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.standings-logo {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.standings-name {
+    font-size: 16px;
+    font-weight: 500;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.standings-points {
+    font-weight: 700;
+    font-size: 20px;
+    color: #4CAF50;
+    text-align: center;
+    font-family: 'Orbitron', monospace;
+}
+
+.standings-points-header {
+    text-align: center;
+}
+
 /* Team color themes */
 .team-falcons .team-abbr {
     color: #a71930;

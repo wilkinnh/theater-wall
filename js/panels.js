@@ -1235,7 +1235,7 @@ class PanelManager {
         const rowsHtml = standings.map(team => `
             <div class="standings-row">
                 <div class="standings-team">
-                    <span class="standings-name">${team.name}</span>
+                    <span class="standings-name">${team.shortName}</span>
                 </div>
                 <div class="standings-points">${team.points}</div>
             </div>

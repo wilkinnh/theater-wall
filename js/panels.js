@@ -1203,7 +1203,7 @@ class PanelManager {
     createArsenalStats(gameData) {
         const attrs = gameData.attributes;
 
-        // Only fetch standings if not already cached (prevents flickering on refresh)
+        // Fetch standings if not cached, or update if cached (non-blocking)
         if (!this.cachedStandings) {
             this.fetchPremierLeagueStandings().then(standings => {
                 if (standings) {
@@ -1211,6 +1211,25 @@ class PanelManager {
                     this.updateArsenalStandingsDisplay(standings);
                 }
             });
+        }
+
+        // Start periodic refresh if not already running
+        if (!this.standingsRefreshInterval) {
+            this.standingsRefreshInterval = setInterval(() => {
+                // Stop if the panel is no longer in the DOM
+                if (!document.getElementById('arsenal-standings')) {
+                    clearInterval(this.standingsRefreshInterval);
+                    this.standingsRefreshInterval = null;
+                    this.cachedStandings = null;
+                    return;
+                }
+                this.fetchPremierLeagueStandings().then(standings => {
+                    if (standings) {
+                        this.cachedStandings = standings;
+                        this.updateArsenalStandingsDisplay(standings);
+                    }
+                });
+            }, 60000); // refresh every 60 seconds
         }
 
         // If we have cached standings, render them directly

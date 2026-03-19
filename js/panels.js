@@ -1207,7 +1207,7 @@ class PanelManager {
                 entityId,
                 state: this.homeAssistant.getEntityState(entityId)
             }))
-            .filter(({ state }) => state && state.attributes && this.getNcaaGameUrgency(state) >= 0)
+            .filter(({ entityId, state }) => entityId !== activeEntity && state && state.attributes && this.getNcaaGameUrgency(state) >= 0)
             .sort((a, b) => {
                 const dateA = a.state.attributes.date ? new Date(a.state.attributes.date).getTime() : Infinity;
                 const dateB = b.state.attributes.date ? new Date(b.state.attributes.date).getTime() : Infinity;

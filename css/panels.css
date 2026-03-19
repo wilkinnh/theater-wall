@@ -516,6 +516,88 @@
     gap: 5px;
 }
 
+/* NCAA Men's Basketball Live Scoreboard */
+.ncaa-special .ncaa-header {
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.ncaa-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.ncaa-scoreboard {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.ncaa-game-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 12px 14px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.03);
+    transition: background 0.2s;
+}
+
+.ncaa-game-row.ncaa-active {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.ncaa-matchup {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Orbitron', monospace;
+}
+
+.ncaa-team-abbr {
+    font-size: 18px;
+    font-weight: 600;
+    color: #ccc;
+    min-width: 44px;
+    text-align: center;
+}
+
+.ncaa-game-row.ncaa-active .ncaa-team-abbr {
+    color: #fff;
+}
+
+.ncaa-score-val {
+    font-size: 24px;
+    font-weight: 700;
+    color: #fff;
+    min-width: 34px;
+    text-align: center;
+}
+
+.ncaa-dash {
+    font-size: 18px;
+    color: #555;
+}
+
+.ncaa-time-info {
+    font-size: 14px;
+    color: #888;
+    white-space: nowrap;
+    font-family: 'Orbitron', monospace;
+    text-align: center;
+}
+
+.ncaa-game-row.ncaa-active .ncaa-time-info {
+    color: #aaa;
+}
+
 /* Arsenal Special Panel - Premier League Standings */
 .arsenal-special .league-standings {
     margin-top: 10px;

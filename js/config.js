@@ -20,9 +20,42 @@ class TheaterWallConfig {
                     'assets/videos/ric-flair.mp4'
                 ]
             },
-            gameScore: null // Set by team-selector from Home Assistant
+            gameScore: null, // Set by team-selector from Home Assistant
+            ncaaBasketballSensors: [
+                'sensor.ncaam_arizona',
+                'sensor.ncaam_arkansas',
+                'sensor.ncaam_byu',
+                'sensor.ncaam_clemson',
+                'sensor.ncaam_duke',
+                'sensor.ncaam_florida',
+                'sensor.ncaam_georgia',
+                'sensor.ncaam_gonzaga',
+                'sensor.ncaam_houston',
+                'sensor.ncaam_illinois',
+                'sensor.ncaam_iowast',
+                'sensor.ncaam_kansas',
+                'sensor.ncaam_kentucky',
+                'sensor.ncaam_louisville',
+                'sensor.ncaam_miami',
+                'sensor.ncaam_michigan',
+                'sensor.ncaam_michiganst',
+                'sensor.ncaam_ncstate',
+                'sensor.ncaam_nebraska',
+                'sensor.ncaam_purdue',
+                'sensor.ncaam_stmarys',
+                'sensor.ncaam_tcu',
+                'sensor.ncaam_tennessee',
+                'sensor.ncaam_texastech',
+                'sensor.ncaam_ucf',
+                'sensor.ncaam_uconn',
+                'sensor.ncaam_unc',
+                'sensor.ncaam_vanderbilt',
+                'sensor.ncaam_villanova',
+                'sensor.ncaam_virginia',
+                'sensor.ncaam_wisconsin'
+            ] // List of HA entity IDs for NCAA men's basketball team trackers
         };
-        
+
         this.config = { ...this.defaultConfig };
         this.loadConfig();
     }
@@ -32,16 +65,16 @@ class TheaterWallConfig {
         try {
             // Start with default configuration
             this.config = { ...this.defaultConfig };
-            
+
             // Load from localStorage if available
             const savedConfig = localStorage.getItem('theater-wall-config');
             if (savedConfig) {
                 this.config = { ...this.config, ...JSON.parse(savedConfig) };
             }
-            
+
             // Load environment variables from server API
             await this.loadEnvironmentConfig();
-            
+
         } catch (error) {
             this.config = { ...this.defaultConfig };
         }
@@ -52,10 +85,10 @@ class TheaterWallConfig {
     async loadEnvironmentConfig() {
         try {
             const response = await fetch('/api/env');
-            
+
             if (response.ok) {
                 const envConfig = await response.json();
-                
+
                 // Update config with environment variables
                 if (envConfig.HOME_ASSISTANT_URL) {
                     this.config.homeAssistantUrl = envConfig.HOME_ASSISTANT_URL;
@@ -72,14 +105,14 @@ class TheaterWallConfig {
                         window.homeAssistantClient.connect();
                     }
                 }, 1500);
-                
+
             } else {
                 console.error('Failed to fetch /api/env, status:', response.status);
             }
         } catch (error) {
             console.error('❌ Not running on Node.js server or API not available');
             console.error('Error:', error.message);
-            
+
             // Try to load from env-config.js fallback
             this.loadFallbackConfig();
         }
@@ -146,7 +179,7 @@ class TheaterWallConfig {
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.textContent = message;
-        
+
         Object.assign(notification.style, {
             position: 'fixed',
             top: '20px',

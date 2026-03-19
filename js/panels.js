@@ -61,7 +61,7 @@ class PanelManager {
         });
         
         this.homeAssistant.on('states-loaded', () => {
-            // Game score is managed by team-selector from Home Assistant
+            this.loadEntities();
         });
         
         this.homeAssistant.on('state-changed', (data) => {
@@ -90,10 +90,32 @@ class PanelManager {
         const gameScoreEntity = this.config.get('gameScore');
         if (!gameScoreEntity) return;
 
-        
         // Refresh every 30 seconds
-        this.refreshInterval = setInterval(() => {
+        this.refreshInterval = setInterval(async () => {
             this.refreshGameScoreEntity(gameScoreEntity);
+
+            // Also refresh all NCAA basketball sensors so the scoreboard stays current
+            const ncaaSensors = this.config.get('ncaaBasketballSensors') || [];
+            if (ncaaSensors.includes(gameScoreEntity) && ncaaSensors.length > 1) {
+                if (!this.homeAssistant.isConnected) return;
+                try {
+                    const freshStates = await this.homeAssistant.sendWithId({ type: 'get_states' });
+                    let scoreboardDirty = false;
+                    ncaaSensors.forEach(entityId => {
+                        if (entityId === gameScoreEntity) return; // already refreshed above
+                        const freshState = freshStates.find(s => s.entity_id === entityId);
+                        if (freshState) {
+                            this.homeAssistant.entities.set(entityId, freshState);
+                            scoreboardDirty = true;
+                        }
+                    });
+                    if (scoreboardDirty) {
+                        this.updateNcaaScoreboard();
+                    }
+                } catch (e) {
+                    console.error('Failed to refresh NCAA sensors:', e);
+                }
+            }
         }, 30000);
     }
 
@@ -155,6 +177,7 @@ class PanelManager {
     loadGameScore(gameScoreEntity) {
         // HA client already subscribes to all state_changed events and filters client-side
         const state = this.homeAssistant.getEntityState(gameScoreEntity);
+        console.log('[NCAA] loadGameScore:', gameScoreEntity, '→ state:', state ? state.state : 'NOT IN CACHE');
 
         if (state && state.attributes) {
             this.displayGameScore(state);
@@ -723,6 +746,15 @@ class PanelManager {
             } else {
             }
         } else {
+            // Check if an NCAA basketball sibling sensor changed
+            const ncaaSensors = this.config.get('ncaaBasketballSensors') || [];
+            if (ncaaSensors.includes(entityId) && ncaaSensors.includes(gameScoreEntity)) {
+                // Update the HA cache with fresh state, then re-render the scoreboard
+                if (state) {
+                    this.homeAssistant.entities.set(entityId, state);
+                }
+                this.updateNcaaScoreboard();
+            }
         }
     }
 
@@ -894,8 +926,14 @@ class PanelManager {
             case 'nfl':
                 return this.createFootballStats(gameData);
             case 'basketball':
-            case 'nba':
+            case 'nba': {
+                const ncaaSensors = this.config.get('ncaaBasketballSensors') || [];
+                const gameScoreEntity = this.config.get('gameScore');
+                if (ncaaSensors.includes(gameScoreEntity)) {
+                    return this.createNcaaBasketballStats(gameData);
+                }
                 return this.createBasketballStats(gameData);
+            }
             case 'baseball':
             case 'mlb':
                 return this.createBaseballStats(gameData);
@@ -1119,6 +1157,115 @@ class PanelManager {
                 </div>
             </div>
         `;
+    }
+
+    // Get NCAA period label (college basketball uses halves, not quarters)
+    getNcaaPeriodLabel(quarter) {
+        if (!quarter) return '';
+        const q = parseInt(quarter);
+        if (q === 1) return '1st';
+        if (q === 2) return '2nd';
+        if (q === 3) return 'OT';
+        if (q > 3) return `${q - 2}OT`;
+        return `${quarter}`;
+    }
+
+    // Score how close a game is to finishing — higher = show first
+    getNcaaGameUrgency(state) {
+        const a = state.attributes;
+        // No game scheduled (no opponent) — filter out entirely
+        if (!a.opponent_abbr) return -1;
+
+        const quarter = parseInt(a.quarter) || 0;
+
+        // Pre-game
+        if (state.state === 'PRE' || !quarter) return 0;
+
+        // Final
+        if (state.state === 'POST' || state.state === 'off') return 500;
+
+        // Live game — parse clock "MM:SS - Xst/nd" → seconds remaining
+        let clockSeconds = 20 * 60;
+        if (a.clock) {
+            const match = a.clock.match(/^(\d+):(\d+)/);
+            if (match) clockSeconds = parseInt(match[1]) * 60 + parseInt(match[2]);
+        }
+
+        if (quarter === 1) return 1200 - clockSeconds;
+        if (quarter === 2) return 1200 + (1200 - clockSeconds);
+        const otNumber = quarter - 2;
+        return 2400 + (otNumber - 1) * 300 + (300 - clockSeconds);
+    }
+
+    // Create NCAA men's basketball live scoreboard panel
+    createNcaaBasketballStats(gameData) {
+        const ncaaSensors = this.config.get('ncaaBasketballSensors') || [];
+        const activeEntity = this.config.get('gameScore');
+
+        const games = ncaaSensors
+            .map(entityId => ({
+                entityId,
+                state: this.homeAssistant.getEntityState(entityId)
+            }))
+            .filter(({ state }) => state && state.attributes && this.getNcaaGameUrgency(state) >= 0)
+            .sort((a, b) => {
+                const dateA = a.state.attributes.date ? new Date(a.state.attributes.date).getTime() : Infinity;
+                const dateB = b.state.attributes.date ? new Date(b.state.attributes.date).getTime() : Infinity;
+                return dateA - dateB;
+            })
+            .slice(0, 4);
+
+        const rowsHtml = games.map(({ entityId, state }) => {
+            const a = state.attributes;
+            const isActive = entityId === activeEntity;
+            let timeInfo;
+            if (state.state === 'POST' || state.state === 'off') {
+                timeInfo = 'Final';
+            } else if (state.state === 'IN') {
+                timeInfo = a.clock || '';
+            } else if (a.date) {
+                const d = new Date(a.date);
+                timeInfo = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            } else {
+                timeInfo = 'Pre';
+            }
+
+            return `
+                <div class="ncaa-game-row${isActive ? ' ncaa-active' : ''}">
+                    <div class="ncaa-matchup">
+                        <span class="ncaa-team-abbr">${a.team_abbr || '?'}</span>
+                        ${state.state !== 'PRE' ? `<span class="ncaa-score-val">${a.team_score ?? '0'}</span>` : ''}
+                        <span class="ncaa-dash">${state.state === 'PRE' ? 'vs' : '-'}</span>
+                        ${state.state !== 'PRE' ? `<span class="ncaa-score-val">${a.opponent_score ?? '0'}</span>` : ''}
+                        <span class="ncaa-team-abbr">${a.opponent_abbr || '?'}</span>
+                    </div>
+                    <div class="ncaa-time-info">${timeInfo}</div>
+
+                </div>
+            `;
+        }).join('');
+
+        return `
+            <div class="game-stats sport-basketball ncaa-special">
+                <div class="sport-header basketball-header ncaa-header">
+                    <div class="ncaa-title">NCAA Men's Basketball</div>
+                </div>
+                <div id="ncaa-scoreboard" class="ncaa-scoreboard">
+                    ${rowsHtml || '<div class="standings-loading">Loading scores...</div>'}
+                </div>
+            </div>
+        `;
+    }
+
+    // Update only the NCAA scoreboard in the center panel (called when sibling sensors change)
+    updateNcaaScoreboard() {
+        const activeEntity = this.config.get('gameScore');
+        if (!activeEntity) return;
+        const activeState = this.homeAssistant.getEntityState(activeEntity);
+        if (!activeState) return;
+        const centerContainer = this.containers.controls;
+        if (!centerContainer) return;
+        centerContainer.innerHTML = this.createNcaaBasketballStats(activeState);
     }
 
     // Create generic stats for unknown sports

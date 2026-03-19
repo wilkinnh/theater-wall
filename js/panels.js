@@ -1181,8 +1181,8 @@ class PanelManager {
         // Pre-game
         if (state.state === 'PRE' || !quarter) return 0;
 
-        // Final
-        if (state.state === 'POST' || state.state === 'off') return 500;
+        // Final — filter out
+        if (state.state === 'POST' || state.state === 'off') return -1;
 
         // Live game — parse clock "MM:SS - Xst/nd" → seconds remaining
         let clockSeconds = 20 * 60;

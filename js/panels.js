@@ -1234,13 +1234,16 @@ class PanelManager {
                 <div class="ncaa-game-row${isActive ? ' ncaa-active' : ''}">
                     <div class="ncaa-matchup">
                         <span class="ncaa-team-abbr">${a.team_abbr || '?'}</span>
-                        ${state.state !== 'PRE' ? `<span class="ncaa-score-val">${a.team_score ?? '0'}</span>` : ''}
-                        <span class="ncaa-dash">${state.state === 'PRE' ? 'vs' : '-'}</span>
-                        ${state.state !== 'PRE' ? `<span class="ncaa-score-val">${a.opponent_score ?? '0'}</span>` : ''}
+                        <span class="ncaa-dash">${state.state === 'PRE' ? 'vs' : '@'}</span>
                         <span class="ncaa-team-abbr">${a.opponent_abbr || '?'}</span>
                     </div>
+                    ${state.state !== 'PRE' ? `
+                    <div class="ncaa-score-line">
+                        <span class="ncaa-score-val">${a.team_score ?? '0'}</span>
+                        <span class="ncaa-dash">-</span>
+                        <span class="ncaa-score-val">${a.opponent_score ?? '0'}</span>
+                    </div>` : ''}
                     <div class="ncaa-time-info">${timeInfo}</div>
-
                 </div>
             `;
         }).join('');

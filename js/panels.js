@@ -971,6 +971,13 @@ class PanelManager {
         const teamGoalieSaves = Math.max(0, oppShots - oppScore);
         const oppGoalieSaves = Math.max(0, teamShots - teamScore);
 
+        // Home team is on the right panel; away team is on the left
+        const teamIsHome = attrs.team_homeaway === 'home';
+        const leftShots  = teamIsHome ? oppShots : teamShots;
+        const rightShots = teamIsHome ? teamShots : oppShots;
+        const leftSaves  = teamIsHome ? oppGoalieSaves : teamGoalieSaves;
+        const rightSaves = teamIsHome ? teamGoalieSaves : oppGoalieSaves;
+
         return `
             <div class="game-stats sport-hockey">
                 <div class="hockey-header">
@@ -980,29 +987,29 @@ class PanelManager {
                     </div>
                 </div>
                 ${attrs.series_summary ? `<div class="hockey-series-summary">${attrs.series_summary}</div>` : ''}
-                <div class="last-play">${attrs.last_play || ''}</div>
                 <div class="hockey-shots-section">
                     <div class="shots-bar-label">
-                        <span>${teamShots}</span>
+                        <span>${leftShots}</span>
                         <span class="shots-bar-title">Shots on Goal</span>
-                        <span>${oppShots}</span>
+                        <span>${rightShots}</span>
                     </div>
                     <div class="hockey-shots-bar">
-                        <div class="shots-bar-team" style="flex: ${teamShots || 1}"></div>
-                        <div class="shots-bar-opp" style="flex: ${oppShots || 1}"></div>
+                        <div class="shots-bar-team" style="flex: ${leftShots || 1}"></div>
+                        <div class="shots-bar-opp" style="flex: ${rightShots || 1}"></div>
                     </div>
                 </div>
                 <div class="hockey-shots-section">
                     <div class="shots-bar-label">
-                        <span>${teamGoalieSaves}</span>
+                        <span>${leftSaves}</span>
                         <span class="shots-bar-title">Goalie Saves</span>
-                        <span>${oppGoalieSaves}</span>
+                        <span>${rightSaves}</span>
                     </div>
                     <div class="hockey-shots-bar">
-                        <div class="shots-bar-team" style="flex: ${teamGoalieSaves || 1}"></div>
-                        <div class="shots-bar-opp" style="flex: ${oppGoalieSaves || 1}"></div>
+                        <div class="shots-bar-team" style="flex: ${leftSaves || 1}"></div>
+                        <div class="shots-bar-opp" style="flex: ${rightSaves || 1}"></div>
                     </div>
                 </div>
+                <div class="hockey-last-play">${attrs.last_play || ''}</div>
             </div>
         `;
     }

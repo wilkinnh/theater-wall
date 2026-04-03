@@ -947,31 +947,60 @@ class PanelManager {
     // Create hockey-specific stats
     createHockeyStats(gameData) {
         const attrs = gameData.attributes;
+
+        // Parse "17:45 - 2nd" -> "17:45"
+        const clockTime = attrs.clock ? attrs.clock.split(' - ')[0] : 'N/A';
+
+        // Period dots
+        const currentPeriod = parseInt(attrs.quarter) || 0;
+        const totalPeriods = Math.max(currentPeriod, 3);
+        const periodDots = [];
+        for (let i = 1; i <= totalPeriods; i++) {
+            const label = i <= 3 ? `${i}${this.getOrdinalSuffix(i)}` : (i === 4 ? 'OT' : `${i - 3}OT`);
+            const cls = i < currentPeriod ? 'completed' : i === currentPeriod ? 'active' : '';
+            periodDots.push(`<div class="period-dot ${cls}">${label}</div>`);
+        }
+
+        // Shots bar
+        const teamShots = parseInt(attrs.team_shots_on_target) || 0;
+        const oppShots = parseInt(attrs.opponent_shots_on_target) || 0;
+
+        // Goalie saves (shots faced - goals allowed)
+        const teamScore = parseInt(attrs.team_score) || 0;
+        const oppScore = parseInt(attrs.opponent_score) || 0;
+        const teamGoalieSaves = Math.max(0, oppShots - oppScore);
+        const oppGoalieSaves = Math.max(0, teamShots - teamScore);
+
         return `
             <div class="game-stats sport-hockey">
-                <div class="sport-header hockey-header">
-                    <div class="period-info">
-                        <div class="period">${attrs.quarter ? `${attrs.quarter}${this.getOrdinalSuffix(parseInt(attrs.quarter))} Period` : 'N/A'}</div>
-                        <div class="clock">${attrs.clock || 'N/A'}</div>
+                <div class="hockey-header">
+                    <div class="hockey-clock">${clockTime}</div>
+                    <div class="hockey-period-dots">
+                        ${periodDots.join('')}
                     </div>
-                    <div class="last-play">${attrs.last_play || 'N/A'}</div>
                 </div>
-                <div class="stats-grid">
-                    <div class="stat-row shots">
-                        <div class="stat-label">Shots on Goal</div>
-                        <div class="stat-value">${attrs.team_shots_on_target || '0'} - ${attrs.opponent_shots_on_target || '0'}</div>
+                ${attrs.series_summary ? `<div class="hockey-series-summary">${attrs.series_summary}</div>` : ''}
+                <div class="last-play">${attrs.last_play || ''}</div>
+                <div class="hockey-shots-section">
+                    <div class="shots-bar-label">
+                        <span>${teamShots}</span>
+                        <span class="shots-bar-title">Shots on Goal</span>
+                        <span>${oppShots}</span>
                     </div>
-                    <div class="stat-row venue">
-                        <div class="stat-label">Venue</div>
-                        <div class="stat-value">${attrs.venue || 'N/A'}</div>
+                    <div class="hockey-shots-bar">
+                        <div class="shots-bar-team" style="flex: ${teamShots || 1}"></div>
+                        <div class="shots-bar-opp" style="flex: ${oppShots || 1}"></div>
                     </div>
-                    <div class="stat-row location">
-                        <div class="stat-label">Location</div>
-                        <div class="stat-value">${attrs.location || 'N/A'}</div>
+                </div>
+                <div class="hockey-shots-section">
+                    <div class="shots-bar-label">
+                        <span>${teamGoalieSaves}</span>
+                        <span class="shots-bar-title">Goalie Saves</span>
+                        <span>${oppGoalieSaves}</span>
                     </div>
-                    <div class="stat-row tv">
-                        <div class="stat-label">TV Network</div>
-                        <div class="stat-value">${attrs.tv_network || 'N/A'}</div>
+                    <div class="hockey-shots-bar">
+                        <div class="shots-bar-team" style="flex: ${teamGoalieSaves || 1}"></div>
+                        <div class="shots-bar-opp" style="flex: ${oppGoalieSaves || 1}"></div>
                     </div>
                 </div>
             </div>

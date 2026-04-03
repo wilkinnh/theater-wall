@@ -462,6 +462,122 @@
     line-height: 1.3;
 }
 
+/* Hockey-specific styles */
+.hockey-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.hockey-period-dots {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.period-dot {
+    font-size: 11px;
+    font-weight: 600;
+    color: #444;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 8px;
+    border: 2px solid #333;
+    border-radius: 4px;
+}
+
+.period-dot.completed {
+    color: #888;
+    border-color: #555;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.period-dot.active {
+    color: #4CAF50;
+    border-color: #4CAF50;
+    background: rgba(76, 175, 80, 0.1);
+    box-shadow: 0 0 8px rgba(76, 175, 80, 0.3);
+}
+
+.hockey-series-summary {
+    font-size: 14px;
+    font-weight: 600;
+    color: #4CAF50;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    padding: 6px 12px;
+    border: 1px solid rgba(76, 175, 80, 0.4);
+    border-radius: 4px;
+    background: rgba(76, 175, 80, 0.08);
+}
+
+.hockey-clock {
+    font-size: 32px;
+    font-weight: 700;
+    color: #4CAF50;
+    font-family: 'Orbitron', monospace;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.hockey-shots-section {
+    margin: 5px 0;
+}
+
+.shots-bar-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.shots-bar-label span:first-child,
+.shots-bar-label span:last-child {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    font-family: 'Orbitron', monospace;
+    min-width: 28px;
+}
+
+.shots-bar-label span:last-child {
+    text-align: right;
+}
+
+.shots-bar-title {
+    font-size: 11px;
+    color: #aaa;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: inherit;
+}
+
+.hockey-shots-bar {
+    display: flex;
+    height: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    gap: 2px;
+    background: #222;
+}
+
+.shots-bar-team {
+    background: linear-gradient(to right, #4CAF50, #66BB6A);
+    height: 100%;
+    border-radius: 4px 0 0 4px;
+    min-width: 4px;
+}
+
+.shots-bar-opp {
+    background: linear-gradient(to left, #e53935, #ef5350);
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+    min-width: 4px;
+}
+
 /* Soccer-specific styles */
 .soccer-clock {
     font-size: 36px;

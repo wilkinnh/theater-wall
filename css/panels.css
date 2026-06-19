@@ -585,41 +585,77 @@
     min-width: 4px;
 }
 
+.shots-bar-yellow-left {
+    background: linear-gradient(to right, #f9a825, #4CAF50);
+    height: 100%;
+    border-radius: 4px 0 0 4px;
+    min-width: 4px;
+}
+
+.shots-bar-yellow-right {
+    background: linear-gradient(to left, #f9a825, #e53935);
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+    min-width: 4px;
+}
+
 /* Soccer-specific styles */
+.sport-soccer.game-stats {
+    gap: 8px;
+}
+
 .soccer-clock {
     font-size: 36px;
     font-weight: 700;
     color: #4CAF50;
     text-align: center;
-    padding: 15px 0;
+    padding: 4px 0;
     font-family: 'Orbitron', monospace;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .soccer-header {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 20px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 4px;
 }
 
-.soccer-event .stat-label {
+.soccer-half {
+    font-size: 18px;
     font-weight: 600;
-    color: #4CAF50;
-    min-width: 120px;
+    color: #aaa;
+    font-family: 'Orbitron', monospace;
 }
 
-.soccer-event .stat-value {
-    font-style: italic;
+.soccer-event-line {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 3px 0;
+    overflow: hidden;
 }
 
-.soccer-event .event-time {
-    display: inline-block;
+.event-player {
+    font-size: 13px;
+    font-weight: 500;
+    color: #fff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+    flex: 1;
+}
+
+.event-times {
+    font-size: 13px;
     font-weight: 700;
     color: #4CAF50;
-    font-style: normal;
-    min-width: 45px;
     font-family: 'Orbitron', monospace;
+    flex-shrink: 0;
+    margin-left: 8px;
 }
 
 .section-title {
@@ -633,10 +669,36 @@
     border-bottom: 2px solid rgba(76, 175, 80, 0.3);
 }
 
+.sport-soccer .section-title {
+    font-size: 14px;
+    margin: 4px 0 2px 0;
+    padding-bottom: 4px;
+}
+
 .soccer-events-container {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 1px;
+}
+
+.soccer-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+}
+
+.soccer-meta-item {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.soccer-tv {
+    flex-shrink: 0;
+    margin-left: 8px;
 }
 
 /* NCAA Men's Basketball Live Scoreboard */

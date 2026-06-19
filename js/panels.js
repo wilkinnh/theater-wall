@@ -1130,27 +1130,37 @@ class PanelManager {
             return '';
         }
 
-        let html = '';
+        // Collect goals only, grouped by player name
+        const goalsByPlayer = new Map(); // player name -> { playerInfo, minutes[] }
 
-        // Parse and display all events
         events.forEach(event => {
             const trimmedEvent = event.trim();
-
-            // Parse format: "81' Yellow Card: Lamare Bogarde (AVL)"
-            // Stop capturing at the next timestamp or end of string
             const eventMatch = trimmedEvent.match(/^(\d+(?:\+\d+)?')\s+([^:]+):\s*(.+?)(?=\s+\d+(?:\+\d+)?'|$)/);
+            if (!eventMatch) return;
 
-            if (eventMatch) {
-                const minute = eventMatch[1];
-                const eventType = eventMatch[2].trim();
-                const playerInfo = eventMatch[3].trim();
+            const minute = eventMatch[1];
+            const eventType = eventMatch[2].trim().toLowerCase();
+            const playerInfo = eventMatch[3].trim();
 
-                html += `<div class="stat-row soccer-event">
-                            <div class="stat-label">${eventType}</div>
-                            <div class="stat-value"><span class="event-time">${minute}</span> ${playerInfo}</div>
-                        </div>`;
+            if (!eventType.includes('goal')) return;
+
+            // Key by player name without team suffix for dedup, but keep full playerInfo for display
+            const playerName = playerInfo.replace(/\s*\([^)]+\)\s*$/, '').trim();
+            if (goalsByPlayer.has(playerName)) {
+                goalsByPlayer.get(playerName).minutes.push(minute);
+            } else {
+                goalsByPlayer.set(playerName, { playerInfo, minutes: [minute] });
             }
-            // Skip events that don't match the expected format (like possession percentages)
+        });
+
+        if (goalsByPlayer.size === 0) return '';
+
+        let html = '';
+        goalsByPlayer.forEach(({ playerInfo, minutes }) => {
+            html += `<div class="soccer-event-line">
+                        <span class="event-player">${playerInfo}</span>
+                        <span class="event-times">${minutes.join(', ')}</span>
+                    </div>`;
         });
 
         return html;
@@ -1166,33 +1176,81 @@ class PanelManager {
             return this.createArsenalStats(gameData);
         }
 
+        const periodLabel = this.getSoccerPeriodLabel(attrs.quarter);
         const formattedLastPlay = this.formatSoccerLastPlay(attrs.last_play);
+
+        // Shots bar — respect home/away positioning (soccer: home on right)
+        const teamShots = parseInt(attrs.team_shots_on_target) || 0;
+        const oppShots = parseInt(attrs.opponent_shots_on_target) || 0;
+        const teamIsHome = attrs.team_homeaway === 'home';
+        const leftShots  = teamIsHome ? oppShots : teamShots;
+        const rightShots = teamIsHome ? teamShots : oppShots;
+
+        // Yellow cards — count from last_play by matching team abbreviation
+        let teamYellows = 0, oppYellows = 0;
+        if (attrs.last_play) {
+            const ycRegex = /\d+(?:\+\d+)?'\s+Yellow Card:\s*.+?\(([^)]+)\)/g;
+            let m;
+            while ((m = ycRegex.exec(attrs.last_play)) !== null) {
+                if (m[1] === attrs.team_abbr) teamYellows++;
+                else if (m[1] === attrs.opponent_abbr) oppYellows++;
+            }
+        }
+        const leftYellows  = teamIsHome ? oppYellows : teamYellows;
+        const rightYellows = teamIsHome ? teamYellows : oppYellows;
 
         return `
             <div class="game-stats sport-soccer">
-                <div class="sport-header soccer-header">
+                <div class="soccer-header">
                     <div class="soccer-clock">${attrs.clock || 'N/A'}</div>
+                    ${periodLabel ? `<div class="soccer-half">${periodLabel}</div>` : ''}
                 </div>
-                <div class="stats-grid">
-                    <div class="stat-row shots">
-                        <div class="stat-label">Shots on Target</div>
-                        <div class="stat-value">${attrs.team_shots_on_target || '0'} - ${attrs.opponent_shots_on_target || '0'}</div>
+                <div class="hockey-shots-section">
+                    <div class="shots-bar-label">
+                        <span>${leftShots}</span>
+                        <span class="shots-bar-title">Shots on Target</span>
+                        <span>${rightShots}</span>
                     </div>
-                    <div class="stat-row venue">
-                        <div class="stat-label">Venue</div>
-                        <div class="stat-value">${attrs.venue || 'N/A'}</div>
-                    </div>
-                    <div class="stat-row tv">
-                        <div class="stat-label">TV Network</div>
-                        <div class="stat-value">${attrs.tv_network || 'N/A'}</div>
+                    <div class="hockey-shots-bar">
+                        <div class="shots-bar-team" style="flex: ${leftShots || 1}"></div>
+                        <div class="shots-bar-opp" style="flex: ${rightShots || 1}"></div>
                     </div>
                 </div>
-                ${formattedLastPlay ? '<div class="section-title">Match Events</div>' : ''}
-                <div class="soccer-events-container">
-                    ${formattedLastPlay}
+                <div class="hockey-shots-section">
+                    <div class="shots-bar-label">
+                        <span>${leftYellows}</span>
+                        <span class="shots-bar-title">Yellow Cards</span>
+                        <span>${rightYellows}</span>
+                    </div>
+                    <div class="hockey-shots-bar">
+                        <div class="shots-bar-yellow-left" style="flex: ${leftYellows || 1}"></div>
+                        <div class="shots-bar-yellow-right" style="flex: ${rightYellows || 1}"></div>
+                    </div>
                 </div>
+                <div class="soccer-meta">
+                    ${attrs.venue ? `<div class="soccer-meta-item">${attrs.venue}</div>` : ''}
+                    ${attrs.tv_network ? `<div class="soccer-meta-item soccer-tv">${attrs.tv_network}</div>` : ''}
+                </div>
+                ${formattedLastPlay ? `
+                    <div class="section-title">Match Events</div>
+                    <div class="soccer-events-container">
+                        ${formattedLastPlay}
+                    </div>
+                ` : ''}
             </div>
         `;
+    }
+
+    // Get soccer period label (halves, extra time, penalties)
+    getSoccerPeriodLabel(quarter) {
+        if (!quarter) return '';
+        const q = parseInt(quarter);
+        if (q === 1) return '1st Half';
+        if (q === 2) return '2nd Half';
+        if (q === 3) return 'ET 1st';
+        if (q === 4) return 'ET 2nd';
+        if (q >= 5) return 'Penalties';
+        return '';
     }
 
     // Get NCAA period label (college basketball uses halves, not quarters)

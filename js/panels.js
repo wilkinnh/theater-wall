@@ -1179,12 +1179,13 @@ class PanelManager {
         const periodLabel = this.getSoccerPeriodLabel(attrs.quarter);
         const formattedLastPlay = this.formatSoccerLastPlay(attrs.last_play);
 
-        // Shots bar — respect home/away positioning (soccer: home on right)
+        // Shots bar — soccer uses European convention: home team on LEFT
         const teamShots = parseInt(attrs.team_shots_on_target) || 0;
         const oppShots = parseInt(attrs.opponent_shots_on_target) || 0;
         const teamIsHome = attrs.team_homeaway === 'home';
-        const leftShots  = teamIsHome ? oppShots : teamShots;
-        const rightShots = teamIsHome ? teamShots : oppShots;
+        // teamIsHome=true → team is on left; teamIsHome=false → opponent is on left
+        const leftShots  = teamIsHome ? teamShots : oppShots;
+        const rightShots = teamIsHome ? oppShots : teamShots;
 
         // Yellow cards — count from last_play by matching team abbreviation
         let teamYellows = 0, oppYellows = 0;
@@ -1192,12 +1193,13 @@ class PanelManager {
             const ycRegex = /\d+(?:\+\d+)?'\s+Yellow Card:\s*.+?\(([^)]+)\)/g;
             let m;
             while ((m = ycRegex.exec(attrs.last_play)) !== null) {
-                if (m[1] === attrs.team_abbr) teamYellows++;
-                else if (m[1] === attrs.opponent_abbr) oppYellows++;
+                const abbr = m[1].trim();
+                if (abbr === attrs.team_abbr) teamYellows++;
+                else if (abbr === attrs.opponent_abbr) oppYellows++;
             }
         }
-        const leftYellows  = teamIsHome ? oppYellows : teamYellows;
-        const rightYellows = teamIsHome ? teamYellows : oppYellows;
+        const leftYellows  = teamIsHome ? teamYellows : oppYellows;
+        const rightYellows = teamIsHome ? oppYellows : teamYellows;
 
         return `
             <div class="game-stats sport-soccer">

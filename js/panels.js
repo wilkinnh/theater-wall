@@ -1123,8 +1123,11 @@ class PanelManager {
         }
 
         // Soccer data format: "45'+1' Yellow Card: Player (TEAM) 45'+2' Yellow Card: Player..."
-        // Split by time markers to get individual events
-        const events = lastPlay.split(/(?=\d+(?:\+\d+)?'\s+)/).filter(e => e.trim());
+        // Match events directly against the full string — do NOT use split() with a zero-width
+        // lookahead here: it can match mid-number (e.g. the '7' inside "17'") and silently
+        // truncate two-digit minutes since the split point isn't anchored to a token boundary.
+        const eventRegex = /(\d+(?:\+\d+)?')\s+([^:]+):\s*(.+?)(?=\s+\d+(?:\+\d+)?'|$)/g;
+        const events = [...lastPlay.matchAll(eventRegex)];
 
         if (events.length === 0) {
             return '';
@@ -1133,11 +1136,7 @@ class PanelManager {
         // Collect goals only, grouped by player name
         const goalsByPlayer = new Map(); // player name -> { playerInfo, minutes[] }
 
-        events.forEach(event => {
-            const trimmedEvent = event.trim();
-            const eventMatch = trimmedEvent.match(/^(\d+(?:\+\d+)?')\s+([^:]+):\s*(.+?)(?=\s+\d+(?:\+\d+)?'|$)/);
-            if (!eventMatch) return;
-
+        events.forEach(eventMatch => {
             const minute = eventMatch[1];
             const eventType = eventMatch[2].trim().toLowerCase();
             const playerInfo = eventMatch[3].trim();

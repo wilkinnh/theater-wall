@@ -616,10 +616,9 @@
 
 .soccer-header {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 16px;
+    gap: 2px;
     margin-bottom: 4px;
 }
 
@@ -683,8 +682,8 @@
 
 .soccer-meta {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+    gap: 2px;
     font-size: 12px;
     color: #666;
     margin-top: 4px;
@@ -694,11 +693,6 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.soccer-tv {
-    flex-shrink: 0;
-    margin-left: 8px;
 }
 
 /* NCAA Men's Basketball Live Scoreboard */

@@ -1230,7 +1230,7 @@ class PanelManager {
                 </div>
                 <div class="soccer-meta">
                     ${attrs.venue ? `<div class="soccer-meta-item">${attrs.venue}</div>` : ''}
-                    ${attrs.tv_network ? `<div class="soccer-meta-item soccer-tv">${attrs.tv_network}</div>` : ''}
+                    ${attrs.tv_network ? `<div class="soccer-meta-item">${attrs.tv_network}</div>` : ''}
                 </div>
                 ${formattedLastPlay ? `
                     <div class="section-title">Match Events</div>
